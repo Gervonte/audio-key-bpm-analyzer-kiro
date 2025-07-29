@@ -144,40 +144,7 @@ export const useWaveform = (): UseWaveformReturn => {
     ctx.fill()
     ctx.globalAlpha = 1.0
 
-    // First pass: Draw shadows only (behind the bars)
-    smoothedPeaks.forEach((peak, index) => {
-      if (peak > 0.15) { // Lower threshold so more bars get shadows
-        const x = index * barWidth
-        const barHeight = Math.min(peak * maxBarHeight, height * 0.7)
-        const y = Math.max(0, centerY - barHeight / 2)
-        const barWidthAdjusted = Math.max(1.2, barWidth - 0.2)
-
-        const shadowOpacity = Math.min(0.5, (peak - 0.15) * 0.6) // Higher opacity for visibility
-
-        // Create shadow shape (slightly offset)
-        const shadowOffsetX = 1.5
-        const shadowOffsetY = 2.5
-        const radius = Math.min(barWidthAdjusted / 2, 3.0)
-
-        // Draw shadow as a filled shape (not using shadowBlur to avoid affecting main bars)
-        ctx.fillStyle = `rgba(0, 0, 0, ${shadowOpacity})`
-        ctx.beginPath()
-        const x1 = x + shadowOffsetX
-        const y1 = y + shadowOffsetY
-        const x2 = x + barWidthAdjusted + shadowOffsetX
-        const y2 = y + barHeight + shadowOffsetY
-
-        ctx.moveTo(x1 + radius, y1)
-        ctx.arcTo(x2, y1, x2, y1 + radius, radius)
-        ctx.arcTo(x2, y2, x2 - radius, y2, radius)
-        ctx.arcTo(x1, y2, x1, y2 - radius, radius)
-        ctx.arcTo(x1, y1, x1 + radius, y1, radius)
-        ctx.closePath()
-        ctx.fill()
-      }
-    })
-
-    // Second pass: Draw the clean, bright waveform bars on top
+    // Now draw the main waveform with enhanced smooth curves
     smoothedPeaks.forEach((peak, index) => {
       const x = index * barWidth
       const barHeight = Math.min(peak * maxBarHeight, height * 0.7)
@@ -209,7 +176,7 @@ export const useWaveform = (): UseWaveformReturn => {
         baseColor = `rgba(${red}, ${green}, ${blue}, ${0.8 + peak * 0.15})`
         opacity = 0.9
       } else {
-        // Very loud parts - deep red to bright red-pink
+        // Very loud parts - deep red to bright red-pink with intense shadow
         const intensity = (peak - 0.8) * 5 // 0 to 1
         const red = 255
         const green = Math.floor(intensity * 69) // 0 to 69 (deep red to hot pink)
@@ -232,7 +199,7 @@ export const useWaveform = (): UseWaveformReturn => {
 
       ctx.fillStyle = barGradient
 
-      // Draw main bar with enhanced rounded corners and smooth edges (NO SHADOW)
+      // Draw main bar with enhanced rounded corners and smooth edges
       ctx.beginPath()
       const radius = Math.min(barWidthAdjusted / 2, 3.0) // Larger radius for smoother appearance
 
@@ -249,6 +216,34 @@ export const useWaveform = (): UseWaveformReturn => {
       ctx.arcTo(x1, y1, x1 + radius, y1, radius)
       ctx.closePath()
       ctx.fill()
+
+      // Add elegant black shadow effect for depth
+      if (peak > 0.25) {
+        const shadowIntensity = Math.min(8, (peak - 0.25) * 12) // 0 to 8 blur
+        const shadowOpacity = Math.min(0.4, (peak - 0.25) * 0.6) // 0 to 0.4 opacity
+
+        // Create multiple shadow layers for depth
+        for (let shadowLayer = 0; shadowLayer < 2; shadowLayer++) {
+          ctx.shadowColor = `rgba(0, 0, 0, ${shadowOpacity * (1 - shadowLayer * 0.3)})`
+          ctx.shadowBlur = shadowIntensity * (1 + shadowLayer * 0.5)
+          ctx.shadowOffsetX = shadowLayer * 0.5 // Slight horizontal offset
+          ctx.shadowOffsetY = shadowLayer * 1.0 + 1 // Downward shadow for depth
+
+          ctx.beginPath()
+          ctx.moveTo(x1 + radius, y1)
+          ctx.arcTo(x2, y1, x2, y1 + radius, radius)
+          ctx.arcTo(x2, y2, x2 - radius, y2, radius)
+          ctx.arcTo(x1, y2, x1, y2 - radius, radius)
+          ctx.arcTo(x1, y1, x1 + radius, y1, radius)
+          ctx.closePath()
+          ctx.fill()
+        }
+
+        // Reset shadow
+        ctx.shadowBlur = 0
+        ctx.shadowOffsetX = 0
+        ctx.shadowOffsetY = 0
+      }
     })
 
     // Add progress overlay with enhanced dynamic styling
@@ -305,20 +300,22 @@ export const useWaveform = (): UseWaveformReturn => {
           ctx.roundRect(x, y, barWidthAdjusted, barHeight, radius)
           ctx.fill()
 
-          // Draw shadow for processed bars (separate from main bar)
-          if (peak > 0.15) {
-            const shadowOpacity = Math.min(0.5, (peak - 0.15) * 0.6)
-            const shadowOffsetX = 1.5
-            const shadowOffsetY = 2.5
+          // Add black shadow for processed bars
+          if (peak > 0.25) {
+            const shadowIntensity = Math.min(6, (peak - 0.25) * 8)
+            const shadowOpacity = Math.min(0.5, (peak - 0.25) * 0.7)
+            ctx.shadowColor = `rgba(0, 0, 0, ${shadowOpacity})`
+            ctx.shadowBlur = shadowIntensity
+            ctx.shadowOffsetX = 0.5
+            ctx.shadowOffsetY = 1
 
-            // Draw shadow as separate shape
-            ctx.fillStyle = `rgba(0, 0, 0, ${shadowOpacity})`
             ctx.beginPath()
-            ctx.roundRect(x + shadowOffsetX, y + shadowOffsetY, barWidthAdjusted, barHeight, radius)
+            ctx.roundRect(x, y, barWidthAdjusted, barHeight, radius)
             ctx.fill()
 
-            // Reset fill style for main bar
-            ctx.fillStyle = processedGradient
+            ctx.shadowBlur = 0
+            ctx.shadowOffsetX = 0
+            ctx.shadowOffsetY = 0
           }
         }
       })
