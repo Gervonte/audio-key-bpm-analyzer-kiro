@@ -14,7 +14,7 @@
   - Set up utility functions for data validation
   - _Requirements: 1.2, 2.1_
 
-- [ ] 3. Create file upload component with validation
+- [x] 3. Create file upload component with validation
   - Build FileUpload component using Chakra UI with drag-and-drop functionality
   - Implement file format validation (MP3, WAV, FLAC, M4A)
   - Add file size validation (max 50MB)

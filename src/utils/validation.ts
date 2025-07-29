@@ -223,7 +223,8 @@ export function createAudioFile(file: File): AudioFile | null {
  * Utility to get file extension from filename
  */
 export function getFileExtension(filename: string): string {
-    return filename.split('.').pop()?.toLowerCase() || ''
+    const parts = filename.split('.')
+    return parts.length > 1 ? parts.pop()?.toLowerCase() || '' : ''
 }
 
 /**
