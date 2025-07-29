@@ -6,9 +6,7 @@ import {
   closeAudioContext,
   validateAudioBuffer,
   preprocessAudioBuffer,
-  isCorruptedAudioError,
-  extractAudioMetadata,
-  type AudioMetadata
+  isCorruptedAudioError
 } from '../utils/audioProcessing'
 import { SUPPORTED_FORMATS } from '../types'
 import type { AudioFile, ValidationResult } from '../types'

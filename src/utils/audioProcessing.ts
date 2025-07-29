@@ -163,12 +163,20 @@ export function validateAudioBuffer(audioBuffer: AudioBuffer): { isValid: boolea
   }
 
   // Check if audio data contains only silence or NaN values
+  // Sample more data points and use a lower threshold for better detection
   let hasValidData = false
+  const sampleSize = Math.min(audioBuffer.length, 10000) // Sample up to 10,000 values
+  const threshold = 0.0001 // Lower threshold for quiet audio
+  
   for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
     const channelData = audioBuffer.getChannelData(channel)
-    for (let i = 0; i < Math.min(channelData.length, 1000); i++) { // Sample first 1000 values
+    
+    // Check samples throughout the audio, not just the beginning
+    const step = Math.max(1, Math.floor(channelData.length / sampleSize))
+    
+    for (let i = 0; i < channelData.length; i += step) {
       const value = channelData[i]
-      if (!isNaN(value) && Math.abs(value) > 0.001) {
+      if (!isNaN(value) && Math.abs(value) > threshold) {
         hasValidData = true
         break
       }
