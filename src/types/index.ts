@@ -21,17 +21,17 @@ export interface BPMResult {
   detectedBeats: number // Number of beats detected
 }
 
+export interface ConfidenceScores {
+  overall: number
+  key: number
+  bpm: number
+}
+
 export interface AnalysisResult {
   key: KeyResult
   bpm: BPMResult
   confidence: ConfidenceScores
   processingTime: number
-}
-
-export interface ConfidenceScores {
-  overall: number
-  key: number
-  bpm: number
 }
 
 export interface WaveformData {
@@ -55,3 +55,15 @@ export interface ValidationResult {
   isValid: boolean
   error?: string
 }
+
+// Supported audio formats
+export const SUPPORTED_FORMATS = ['mp3', 'wav', 'flac', 'm4a'] as const
+export type SupportedFormat = typeof SUPPORTED_FORMATS[number]
+
+// File size limits
+export const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50MB in bytes
+export const MAX_PROCESSING_TIME = 30 * 1000 // 30 seconds in milliseconds
+
+// BPM and confidence ranges
+export const BPM_RANGE = { min: 60, max: 200 } as const
+export const CONFIDENCE_RANGE = { min: 0, max: 1 } as const
