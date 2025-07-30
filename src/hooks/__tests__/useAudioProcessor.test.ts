@@ -53,7 +53,7 @@ describe('useAudioProcessor', () => {
         vi.clearAllMocks()
 
         // Default successful mock
-        mockProcessAudio.mockImplementation(async (audioBuffer, options) => {
+        mockProcessAudio.mockImplementation(async (_audioBuffer, options) => {
             // Simulate progress updates
             if (options?.onProgress) {
                 options.onProgress(10)
