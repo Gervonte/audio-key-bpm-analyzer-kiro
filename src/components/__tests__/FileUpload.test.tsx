@@ -141,7 +141,7 @@ describe('FileUpload Component', () => {
     )
 
     const validFile = createValidAudioFile()
-    const dropZone = screen.getByText(/drag & drop your audio file here/i).closest('div')
+    const dropZone = screen.getByText(/processing audio file/i).closest('div')
 
     // Simulate drop while processing
     fireEvent.drop(dropZone!, {
@@ -195,7 +195,7 @@ describe('FileUpload Component', () => {
     )
 
     const clickSpy = vi.spyOn(HTMLInputElement.prototype, 'click')
-    const dropZone = screen.getByText(/drag & drop your audio file here/i).closest('div')
+    const dropZone = screen.getByText(/processing audio file/i).closest('div')
 
     await userEvent.click(dropZone!)
 

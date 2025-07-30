@@ -191,7 +191,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
           borderColor="gray.300"
           p={4}
           position="relative"
-          overflow="visible"
+          overflow="hidden"
           w="100%"
           minH={`${canvasSize.height + 32}px`}
           display="flex"
@@ -214,21 +214,58 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
             }}
           />
           
-          {/* Progress overlay text */}
+          {/* Progress overlay */}
           {progress !== undefined && progress > 0 && (
-            <Box
-              position="absolute"
-              top={2}
-              right={2}
-              bg="rgba(255, 255, 255, 0.9)"
-              px={2}
-              py={1}
-              borderRadius="md"
-              fontSize="xs"
-              color="gray.700"
-            >
-              {Math.round(progress * 100)}% analyzed
-            </Box>
+            <>
+              {/* Progress bar overlay on waveform */}
+              <Box
+                position="absolute"
+                top={4}
+                left={4}
+                right={4}
+                bottom={4}
+                pointerEvents="none"
+              >
+                <Box
+                  position="absolute"
+                  top={0}
+                  left={0}
+                  width={`${progress * 100}%`}
+                  height="100%"
+                  bg="rgba(255, 0, 0, 0.1)"
+                  borderRadius="lg"
+                  transition="width 0.3s ease"
+                />
+                <Box
+                  position="absolute"
+                  top={0}
+                  left={`${progress * 100}%`}
+                  width="2px"
+                  height="100%"
+                  bg="red.500"
+                  transition="left 0.3s ease"
+                />
+              </Box>
+              
+              {/* Progress text overlay */}
+              <Box
+                position="absolute"
+                top={2}
+                right={2}
+                bg="rgba(255, 255, 255, 0.95)"
+                px={3}
+                py={1}
+                borderRadius="md"
+                fontSize="sm"
+                color="gray.700"
+                fontWeight="medium"
+                border="1px solid"
+                borderColor="gray.200"
+                boxShadow="sm"
+              >
+                {Math.round(progress * 100)}% analyzed
+              </Box>
+            </>
           )}
         </Box>
       </VStack>

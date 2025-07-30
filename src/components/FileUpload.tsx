@@ -116,12 +116,19 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         
         <VStack gap={3}>
           <Text fontSize="xl" fontWeight="medium" color="black">
-            {isDragOver ? 'Drop your audio file here' : 'Drag & drop your audio file here'}
+            {isProcessing 
+              ? 'Processing audio file...' 
+              : isDragOver 
+                ? 'Drop your audio file here' 
+                : 'Drag & drop your audio file here'
+            }
           </Text>
           
-          <Text fontSize="sm" color="gray.600">
-            or
-          </Text>
+          {!isProcessing && (
+            <Text fontSize="sm" color="gray.600">
+              or
+            </Text>
+          )}
           
           <Button
             colorScheme="red"
@@ -132,18 +139,35 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               e.stopPropagation()
               handleClick()
             }}
+            _disabled={{
+              opacity: 0.6,
+              cursor: 'not-allowed'
+            }}
           >
             {isProcessing ? 'Processing...' : 'Choose File'}
           </Button>
           
-          <VStack gap={1}>
-            <Text fontSize="sm" color="gray.500">
-              Supported formats: {acceptedFormats.map(f => f.toUpperCase()).join(', ')}
-            </Text>
-            <Text fontSize="sm" color="gray.500">
-              Maximum file size: {formatFileSize(MAX_FILE_SIZE)}
-            </Text>
-          </VStack>
+          {!isProcessing && (
+            <VStack gap={1}>
+              <Text fontSize="sm" color="gray.500">
+                Supported formats: {acceptedFormats.map(f => f.toUpperCase()).join(', ')}
+              </Text>
+              <Text fontSize="sm" color="gray.500">
+                Maximum file size: {formatFileSize(MAX_FILE_SIZE)}
+              </Text>
+            </VStack>
+          )}
+          
+          {isProcessing && (
+            <VStack gap={1}>
+              <Text fontSize="sm" color="gray.600" fontWeight="medium">
+                Please wait while we process your file
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                Do not upload another file during processing
+              </Text>
+            </VStack>
+          )}
         </VStack>
       </Box>
 
