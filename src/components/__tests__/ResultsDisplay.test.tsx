@@ -69,8 +69,8 @@ describe('ResultsDisplay', () => {
       />
     )
 
-    expect(screen.getByText('Analysis Failed')).toBeInTheDocument()
-    expect(screen.getByText(errorMessage)).toBeInTheDocument()
+    expect(screen.getByText('File Loading Error')).toBeInTheDocument()
+    expect(screen.getByText(/corrupted or in an unsupported codec/i)).toBeInTheDocument()
 
     const tryAgainButton = screen.getByText('Try Another File')
     fireEvent.click(tryAgainButton)

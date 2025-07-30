@@ -6,6 +6,7 @@ import { WaveformDisplay } from './components/WaveformDisplay'
 import { ResultsDisplay } from './components/ResultsDisplay'
 import { useFileUpload } from './hooks/useFileUpload'
 import { useAudioProcessor } from './hooks/useAudioProcessor'
+import { useAudioProcessingRetry } from './hooks/useRetry'
 import type { AudioFile, AnalysisResult } from './types'
 
 function App() {
@@ -19,6 +20,14 @@ function App() {
 
   const { loadAudioFile, createAudioFileObject } = useFileUpload()
   const { processAudio, isProcessing, progress, error: processingError, resetState } = useAudioProcessor()
+  
+  // Retry functionality for audio processing
+  const {
+    execute: executeAudioProcessing,
+    retry: retryAudioProcessing,
+    canRetry: canRetryProcessing,
+    isRetrying: isRetryingProcessing
+  } = useAudioProcessingRetry(processAudio)
 
 
 
@@ -47,9 +56,9 @@ function App() {
         setProcessingStage('analyzing')
         console.log('Audio loaded successfully, starting analysis...')
 
-        // Start audio analysis
+        // Start audio analysis with retry capability
         try {
-          const result = await processAudio(buffer)
+          const result = await executeAudioProcessing(buffer)
           setAnalysisResult(result)
           setProcessingStage('complete')
           console.log('Analysis completed:', result)
@@ -78,13 +87,30 @@ function App() {
     resetState()
   }, [resetState])
 
+  const handleRetryAnalysis = useCallback(async () => {
+    if (!canRetryProcessing || !audioBuffer) return
+    
+    setProcessingStage('analyzing')
+    setAnalysisResult(null)
+    
+    try {
+      const result = await retryAudioProcessing()
+      setAnalysisResult(result)
+      setProcessingStage('complete')
+      console.log('Retry analysis completed:', result)
+    } catch (retryError) {
+      console.error('Retry analysis failed:', retryError)
+      setProcessingStage('error')
+    }
+  }, [canRetryProcessing, audioBuffer, retryAudioProcessing])
+
   // Calculate estimated time when progress updates
   const currentEstimatedTime = progress > 0 && isProcessing
     ? Math.ceil((30 * (100 - progress)) / 100) // Simple estimation based on 30s max
     : null
 
   // Determine if we should prevent new uploads
-  const isProcessingAny = isLoadingFile || isProcessing || processingStage === 'analyzing'
+  const isProcessingAny = isLoadingFile || isProcessing || isRetryingProcessing || processingStage === 'analyzing'
 
   return (
     <Box
@@ -125,7 +151,7 @@ function App() {
                         <HStack justify="space-between" mb={2}>
                           <Text fontSize="sm" color="gray.600">
                             {processingStage === 'loading' && 'Loading audio file...'}
-                            {processingStage === 'analyzing' && 'Analyzing audio...'}
+                            {processingStage === 'analyzing' && (isRetryingProcessing ? 'Retrying analysis...' : 'Analyzing audio...')}
                           </Text>
                           {currentEstimatedTime && (
                             <Text fontSize="sm" color="gray.500">
@@ -178,7 +204,7 @@ function App() {
                           />
                           <Text fontSize="sm" color="blue.800">
                             {processingStage === 'loading' && 'Preparing audio for analysis...'}
-                            {processingStage === 'analyzing' && 'Detecting key and BPM patterns...'}
+                            {processingStage === 'analyzing' && (isRetryingProcessing ? 'Retrying key and BPM detection...' : 'Detecting key and BPM patterns...')}
                           </Text>
                         </HStack>
                       </Box>
@@ -225,9 +251,10 @@ function App() {
                 {/* Results Display */}
                 <ResultsDisplay
                   analysisResult={analysisResult || undefined}
-                  isLoading={isProcessing}
+                  isLoading={isProcessing || isRetryingProcessing}
                   error={processingError || undefined}
                   onReset={handleReset}
+                  onRetry={canRetryProcessing ? handleRetryAnalysis : undefined}
                 />
               </VStack>
             } />

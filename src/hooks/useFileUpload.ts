@@ -83,15 +83,23 @@ export const useFileUpload = (): UseFileUploadReturn => {
         const error = decodeError as Error
         
         if (isCorruptedAudioError(error)) {
-          throw new Error(`Audio file appears to be corrupted or in an unsupported format: ${error.message}`)
+          throw new Error(`Audio file appears to be corrupted or uses an unsupported codec. Please try re-exporting your audio file in MP3, WAV, FLAC, or M4A format.`)
         }
         
-        // Try to provide more specific error messages
-        if (error.message.includes('Unable to decode')) {
-          throw new Error('Unable to decode audio file. The file may be corrupted or in an unsupported codec.')
+        // Try to provide more specific error messages based on common issues
+        if (error.message.includes('Unable to decode') || error.message.includes('InvalidStateError')) {
+          throw new Error('Unable to decode audio file. The file may be corrupted, use an unsupported codec, or be in a format that your browser cannot process.')
         }
         
-        throw new Error(`Failed to decode audio file: ${error.message}`)
+        if (error.message.includes('NotSupportedError')) {
+          throw new Error('Audio format not supported by your browser. Please convert to MP3, WAV, FLAC, or M4A.')
+        }
+        
+        if (error.message.includes('DataError')) {
+          throw new Error('Audio file contains invalid data. Please check that the file is not corrupted.')
+        }
+        
+        throw new Error(`Failed to decode audio file. This may be due to an unsupported codec or corrupted file data.`)
       }
 
       // Validate the decoded audio buffer

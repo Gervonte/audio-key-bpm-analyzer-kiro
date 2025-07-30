@@ -125,7 +125,7 @@ describe('useAudioProcessor', () => {
                 }
             })
 
-            expect(result.current.error).toBe('Processing timed out. Please try with a shorter audio file.')
+            expect(result.current.error).toBe('Audio processing timed out after 30 seconds. Please try with a shorter audio file (under 5 minutes) or a less complex track.')
         })
 
         it('should handle key detection errors', async () => {
@@ -141,7 +141,7 @@ describe('useAudioProcessor', () => {
                 }
             })
 
-            expect(result.current.error).toBe('Unable to detect musical key. The audio may not contain clear musical content.')
+            expect(result.current.error).toBe('Unable to detect the musical key. The audio may not contain clear harmonic content or may be too noisy. Try using an instrumental track with distinct musical elements.')
         })
 
         it('should handle BPM detection errors', async () => {
@@ -157,7 +157,7 @@ describe('useAudioProcessor', () => {
                 }
             })
 
-            expect(result.current.error).toBe('Unable to detect BPM. The audio may not have a clear rhythmic pattern.')
+            expect(result.current.error).toBe('Unable to detect the BPM. The audio may not have a clear rhythmic pattern or steady beat. Try using a track with a more prominent drum pattern.')
         })
     })
 

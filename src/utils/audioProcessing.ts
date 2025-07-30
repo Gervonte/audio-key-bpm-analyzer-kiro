@@ -11,7 +11,28 @@ export function checkWebAudioSupport(): { isSupported: boolean; error?: string }
   if (!window.AudioContext && !(window as any).webkitAudioContext) {
     return { 
       isSupported: false, 
-      error: 'Web Audio API not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.' 
+      error: 'Web Audio API not supported in this browser. Please use a modern browser like Chrome, Firefox, Safari, or Edge.' 
+    }
+  }
+
+  // Check for additional Web Audio API features (skip in test environment)
+  if (typeof globalThis !== 'undefined' && typeof (globalThis as any).process === 'undefined' || 
+      (typeof (globalThis as any).process !== 'undefined' && (globalThis as any).process.env?.NODE_ENV !== 'test')) {
+    try {
+      const testContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      if (!testContext.createAnalyser || !testContext.decodeAudioData) {
+        testContext.close()
+        return {
+          isSupported: false,
+          error: 'Your browser has limited Web Audio API support. Please update to a newer version.'
+        }
+      }
+      testContext.close()
+    } catch (error) {
+      return {
+        isSupported: false,
+        error: 'Failed to initialize Web Audio API. Please check your browser settings.'
+      }
     }
   }
 

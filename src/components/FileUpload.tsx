@@ -6,8 +6,10 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { validateAudioFile, formatFileSize } from '../utils/validation'
+import { checkBrowserCompatibility } from '../utils/errorHandling'
 import { SUPPORTED_FORMATS, MAX_FILE_SIZE } from '../types'
 import type { ValidationResult } from '../types'
+import { ErrorDisplay } from './ErrorDisplay'
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void
@@ -22,6 +24,15 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 }) => {
   const [isDragOver, setIsDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showBrowserWarning, setShowBrowserWarning] = useState(false)
+
+  // Check browser compatibility on mount
+  React.useEffect(() => {
+    const browserCompat = checkBrowserCompatibility()
+    if (!browserCompat.isSupported || browserCompat.warnings.length > 0) {
+      setShowBrowserWarning(true)
+    }
+  }, [])
 
   const handleFileValidation = useCallback((file: File): ValidationResult => {
     const validation = validateAudioFile(file)
@@ -84,8 +95,45 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     }
   }, [isProcessing])
 
+  const handleRetry = useCallback(() => {
+    setError(null)
+    setShowBrowserWarning(false)
+    // Re-check browser compatibility
+    const browserCompat = checkBrowserCompatibility()
+    if (!browserCompat.isSupported || browserCompat.warnings.length > 0) {
+      setShowBrowserWarning(true)
+    }
+  }, [])
+
+  const handleDismissError = useCallback(() => {
+    setError(null)
+  }, [])
+
+  const handleDismissBrowserWarning = useCallback(() => {
+    setShowBrowserWarning(false)
+  }, [])
+
   return (
     <VStack gap={4} align="stretch">
+      {/* Browser Compatibility Warning */}
+      {showBrowserWarning && (
+        <ErrorDisplay
+          error={null}
+          showBrowserCompatibility={true}
+          onDismiss={handleDismissBrowserWarning}
+        />
+      )}
+
+      {/* File Upload Error */}
+      {error && (
+        <ErrorDisplay
+          error={error}
+          onRetry={handleRetry}
+          onDismiss={handleDismissError}
+          context="File Upload"
+        />
+      )}
+
       <Box
         border="2px dashed"
         borderColor={isDragOver ? 'red.500' : 'gray.300'}
@@ -170,13 +218,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           )}
         </VStack>
       </Box>
-
-      {error && (
-        <Box bg="red.50" border="1px solid" borderColor="red.200" borderRadius="md" p={4}>
-          <Text fontWeight="bold" color="red.800">Upload Error</Text>
-          <Text color="red.700">{error}</Text>
-        </Box>
-      )}
     </VStack>
   )
 }

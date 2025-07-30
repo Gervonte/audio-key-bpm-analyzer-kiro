@@ -97,7 +97,7 @@ describe('FileUpload Component', () => {
     expect(mockValidateAudioFile).toHaveBeenCalledWith(invalidFile)
 
     await waitFor(() => {
-      expect(screen.getByText(/upload error/i)).toBeInTheDocument()
+      expect(screen.getByText(/file validation error/i)).toBeInTheDocument()
       expect(screen.getByText(/unsupported file format/i)).toBeInTheDocument()
     })
 

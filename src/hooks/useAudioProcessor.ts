@@ -105,19 +105,26 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
       return result
 
     } catch (error) {
-      // Handle different types of errors
+      // Handle different types of errors with more specific messages
       let errorMessage = 'Audio processing failed'
       
       if (error instanceof Error) {
-        if (error.message.includes('timed out')) {
-          errorMessage = 'Processing timed out. Please try with a shorter audio file.'
-        } else if (error.message.includes('cancelled')) {
-          errorMessage = 'Processing was cancelled'
-        } else if (error.message.includes('Key detection failed')) {
-          errorMessage = 'Unable to detect musical key. The audio may not contain clear musical content.'
-        } else if (error.message.includes('BPM detection failed')) {
-          errorMessage = 'Unable to detect BPM. The audio may not have a clear rhythmic pattern.'
+        if (error.message.includes('timed out') || error.message.includes('timeout')) {
+          errorMessage = 'Audio processing timed out after 30 seconds. Please try with a shorter audio file (under 5 minutes) or a less complex track.'
+        } else if (error.message.includes('cancelled') || error.message.includes('aborted')) {
+          errorMessage = 'Audio processing was cancelled'
+        } else if (error.message.includes('Key detection failed') || error.message.includes('key')) {
+          errorMessage = 'Unable to detect the musical key. The audio may not contain clear harmonic content or may be too noisy. Try using an instrumental track with distinct musical elements.'
+        } else if (error.message.includes('BPM detection failed') || error.message.includes('bpm') || error.message.includes('tempo')) {
+          errorMessage = 'Unable to detect the BPM. The audio may not have a clear rhythmic pattern or steady beat. Try using a track with a more prominent drum pattern.'
+        } else if (error.message.includes('memory') || error.message.includes('Memory')) {
+          errorMessage = 'Not enough memory to process this audio file. Try closing other browser tabs or using a smaller audio file.'
+        } else if (error.message.includes('Worker') || error.message.includes('worker')) {
+          errorMessage = 'Audio processing worker failed. This may be due to browser limitations or insufficient resources.'
+        } else if (error.message.includes('AudioBuffer') || error.message.includes('audio buffer')) {
+          errorMessage = 'Invalid audio data detected. The audio file may be corrupted or contain unsupported audio content.'
         } else {
+          // Use the original error message if it's descriptive enough
           errorMessage = error.message
         }
       }

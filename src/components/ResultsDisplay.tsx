@@ -7,12 +7,14 @@ import {
   Button,
 } from '@chakra-ui/react'
 import type { AnalysisResult } from '../types'
+import { ErrorDisplay } from './ErrorDisplay'
 
 interface ResultsDisplayProps {
   analysisResult?: AnalysisResult
   isLoading: boolean
   error?: string
   onReset: () => void
+  onRetry?: () => void
 }
 
 export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
@@ -20,6 +22,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
   isLoading,
   error,
   onReset,
+  onRetry,
 }) => {
   // Don't render anything if there's no result and not loading
   if (!analysisResult && !isLoading && !error) {
@@ -45,25 +48,22 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
   if (error) {
     return (
       <Box w="100%" maxW="600px" mx="auto" mt={6}>
-        <Box bg="white" border="1px solid" borderColor="red.200" borderRadius="lg" p={6}>
-          <VStack gap={4}>
-            <Text color="red.600" fontSize="lg" fontWeight="semibold">
-              Analysis Failed
-            </Text>
-            <Text color="black" textAlign="center">
-              {error}
-            </Text>
-            <Button
-              onClick={onReset}
-              colorScheme="gray"
-              variant="outline"
-              color="black"
-              borderColor="black"
-              _hover={{ bg: 'gray.50' }}
-            >
-              Try Another File
-            </Button>
-          </VStack>
+        <ErrorDisplay
+          error={error}
+          onRetry={onRetry}
+          context="Audio Analysis"
+        />
+        <Box mt={4} textAlign="center">
+          <Button
+            onClick={onReset}
+            colorScheme="gray"
+            variant="outline"
+            color="black"
+            borderColor="black"
+            _hover={{ bg: 'gray.50' }}
+          >
+            Try Another File
+          </Button>
         </Box>
       </Box>
     )
