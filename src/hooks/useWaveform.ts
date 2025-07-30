@@ -219,12 +219,12 @@ export const useWaveform = (): UseWaveformReturn => {
 
       // Add elegant black shadow effect for depth
       if (peak > 0.25) {
-        const shadowIntensity = Math.min(8, (peak - 0.25) * 12) // 0 to 8 blur
-        const shadowOpacity = Math.min(0.4, (peak - 0.25) * 0.6) // 0 to 0.4 opacity
+        const shadowIntensity = Math.min(7, (peak - 0.25) * 12) // 0 to 8 blur
+        const shadowOpacity = Math.min(0.25, (peak - 0.25) * 0.6) // 0 to 0.4 opacity
 
         // Create multiple shadow layers for depth
         for (let shadowLayer = 0; shadowLayer < 2; shadowLayer++) {
-          ctx.shadowColor = `rgba(0, 0, 0, ${shadowOpacity * (1 - shadowLayer * 0.3)})`
+          ctx.shadowColor = `rgba(0, 0, 0, ${shadowOpacity * (1 - shadowLayer * 0.2)})`
           ctx.shadowBlur = shadowIntensity * (1 + shadowLayer * 0.5)
           ctx.shadowOffsetX = shadowLayer * 0.5 // Slight horizontal offset
           ctx.shadowOffsetY = shadowLayer * 1.0 + 1 // Downward shadow for depth
