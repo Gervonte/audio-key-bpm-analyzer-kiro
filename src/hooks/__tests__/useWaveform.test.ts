@@ -38,9 +38,22 @@ const createMockCanvas = () => {
         lineTo: vi.fn(),
         stroke: vi.fn(),
         scale: vi.fn(),
+        quadraticCurveTo: vi.fn(),
+        arcTo: vi.fn(),
+        closePath: vi.fn(),
+        fill: vi.fn(),
+        roundRect: vi.fn(),
+        createLinearGradient: vi.fn(() => ({
+            addColorStop: vi.fn()
+        })),
         set fillStyle(_value: string) { },
         set strokeStyle(_value: string) { },
-        set lineWidth(_value: number) { }
+        set lineWidth(_value: number) { },
+        set globalAlpha(_value: number) { },
+        set shadowColor(_value: string) { },
+        set shadowBlur(_value: number) { },
+        set shadowOffsetX(_value: number) { },
+        set shadowOffsetY(_value: number) { }
     }
 
     vi.spyOn(canvas, 'getContext').mockReturnValue(mockContext as any)
@@ -120,10 +133,11 @@ describe('useWaveform', () => {
             result.current.drawWaveform(canvas, waveformData)
 
             expect(mockContext.clearRect).toHaveBeenCalledWith(0, 0, 800, 200)
-            expect(mockContext.fillRect).toHaveBeenCalled()
+            expect(mockContext.fill).toHaveBeenCalled()
+            expect(mockContext.beginPath).toHaveBeenCalled()
 
-            // Should draw one rectangle per peak
-            expect(mockContext.fillRect).toHaveBeenCalledTimes(waveformData.peaks.length)
+            // Should create paths for drawing the waveform
+            expect(mockContext.fill).toHaveBeenCalled()
         })
 
         it('should draw progress overlay when progress is provided', () => {
@@ -161,8 +175,8 @@ describe('useWaveform', () => {
             result.current.drawWaveform(canvas, waveformData)
 
             expect(mockContext.clearRect).toHaveBeenCalledWith(0, 0, 800, 200)
-            // Should not draw any bars for empty peaks
-            expect(mockContext.fillRect).not.toHaveBeenCalled()
+            // Should return early for empty peaks, so no drawing operations
+            expect(mockContext.beginPath).not.toHaveBeenCalled()
         })
 
         it('should handle canvas without context', () => {

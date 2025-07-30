@@ -15,6 +15,10 @@ export interface TempoCandidate {
   score: number
 }
 
+export interface BPMDetectionOptions {
+  onProgress?: (progress: number) => void
+}
+
 /**
  * BPM Detection class that implements onset detection and tempo estimation
  */
@@ -28,18 +32,24 @@ export class BPMDetector {
   /**
    * Main method to detect BPM from an AudioBuffer
    */
-  async detectBPM(audioBuffer: AudioBuffer): Promise<BPMResult> {
+  async detectBPM(audioBuffer: AudioBuffer, options: BPMDetectionOptions = {}): Promise<BPMResult> {
+    const { onProgress } = options
     try {
+      onProgress?.(10)
+      
       // Preprocess audio: convert to mono and normalize
       const monoBuffer = convertToMono(audioBuffer)
       const processedBuffer = preprocessAudioBuffer(monoBuffer)
       
       this.sampleRate = processedBuffer.sampleRate
+      onProgress?.(30)
       
       // Extract onset times using spectral flux
       const onsetData = this.extractOnsets(processedBuffer)
+      onProgress?.(60)
       
       if (onsetData.times.length < 4) {
+        onProgress?.(100)
         return {
           bpm: 120, // Default fallback BPM
           confidence: 0.1,
@@ -49,12 +59,14 @@ export class BPMDetector {
       
       // Calculate tempo using autocorrelation
       const tempoCandidates = this.calculateTempoCandidates(onsetData)
+      onProgress?.(80)
       
       // Select best tempo candidate
       const bestTempo = this.selectBestTempo(tempoCandidates)
       
       // Validate and filter BPM result
       const validatedBPM = this.validateBPM(bestTempo)
+      onProgress?.(100)
       
       return {
         bpm: Math.round(validatedBPM.bpm),

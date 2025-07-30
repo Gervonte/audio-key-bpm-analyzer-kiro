@@ -20,6 +20,10 @@ export interface KeyProfile {
   correlation: number
 }
 
+export interface KeyDetectionOptions {
+  onProgress?: (progress: number) => void
+}
+
 export class KeyDetector {
   private sampleRate: number
 
@@ -30,16 +34,22 @@ export class KeyDetector {
   /**
    * Main method to detect the musical key of an audio buffer
    */
-  async detectKey(audioBuffer: AudioBuffer): Promise<KeyResult> {
+  async detectKey(audioBuffer: AudioBuffer, options: KeyDetectionOptions = {}): Promise<KeyResult> {
+    const { onProgress } = options
     try {
+      onProgress?.(10)
+      
       // Extract chroma features from the audio
       const chromaVector = this.extractChromaFeatures(audioBuffer)
+      onProgress?.(60)
       
       // Calculate key profiles using Krumhansl-Schmuckler algorithm
       const keyProfile = this.calculateKeyProfile(chromaVector)
+      onProgress?.(90)
       
       // Format the result
       const keySignature = this.getKeySignature(keyProfile.key, keyProfile.mode)
+      onProgress?.(100)
       
       return {
         keyName: keyProfile.key,
