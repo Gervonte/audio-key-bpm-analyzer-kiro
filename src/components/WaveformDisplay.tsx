@@ -28,24 +28,43 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
   const [waveformData, setWaveformData] = useState<WaveformData | null>(null)
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 200 })
 
-  // Handle responsive canvas sizing
+  // Handle responsive canvas sizing with mobile optimization
   useEffect(() => {
     const updateCanvasSize = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth
         const viewportWidth = window.innerWidth
+        const viewportHeight = window.innerHeight
+        const isMobile = viewportWidth <= 768
+        const isTablet = viewportWidth > 768 && viewportWidth <= 1024
         
-        // Make waveform very small to guarantee it fits
-        const maxViewportWidth = Math.max(200, viewportWidth * 0.4) // Only 40% of viewport
-        const availableWidth = containerWidth > 0 ? containerWidth - 150 : maxViewportWidth // Lots of padding
+        // Mobile-first responsive sizing
+        let width: number
+        let height: number
         
-        const width = Math.max(600, Math.min(availableWidth, 1000)) // Even larger for stunning visibility
-        const height = Math.max(150, Math.min(width * 0.25, 250)) // Much taller for impressive appearance
+        if (isMobile) {
+          // Mobile: Use most of the available width with padding
+          const padding = 32 // 16px on each side
+          width = Math.max(280, Math.min(containerWidth - padding, viewportWidth - padding))
+          height = Math.max(120, Math.min(width * 0.3, 180)) // Shorter on mobile to save space
+        } else if (isTablet) {
+          // Tablet: Balanced sizing
+          const padding = 48
+          width = Math.max(400, Math.min(containerWidth - padding, viewportWidth * 0.8))
+          height = Math.max(140, Math.min(width * 0.25, 200))
+        } else {
+          // Desktop: Larger, more impressive sizing
+          const padding = 64
+          width = Math.max(600, Math.min(containerWidth - padding, 1000))
+          height = Math.max(150, Math.min(width * 0.25, 250))
+        }
         
         console.log('Canvas sizing:', { 
           containerWidth, 
           viewportWidth, 
-          availableWidth, 
+          viewportHeight,
+          isMobile,
+          isTablet,
           width, 
           height 
         })
@@ -58,10 +77,12 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
     
     updateCanvasSize()
     window.addEventListener('resize', updateCanvasSize)
+    window.addEventListener('orientationchange', updateCanvasSize) // Mobile orientation changes
     
     return () => {
       clearTimeout(timeoutId)
       window.removeEventListener('resize', updateCanvasSize)
+      window.removeEventListener('orientationchange', updateCanvasSize)
     }
   }, [audioBuffer]) // Re-run when audioBuffer changes
 
@@ -174,35 +195,56 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
   return (
     <Box ref={containerRef} w="100%">
       <VStack gap={3} align="stretch">
-        {/* Waveform info */}
+        {/* Waveform info - responsive layout */}
         <Box>
-          <Text fontSize="sm" color="gray.600">
+          {/* Desktop: Single line */}
+          <Text 
+            fontSize="sm" 
+            color="gray.600" 
+            display={{ base: 'none', md: 'block' }}
+          >
             Duration: {Math.round(waveformData.duration)}s | 
             Sample Rate: {waveformData.sampleRate}Hz | 
             Channels: {waveformData.channels}
           </Text>
+          
+          {/* Mobile: Stacked layout */}
+          <VStack 
+            gap={1} 
+            align="start" 
+            display={{ base: 'flex', md: 'none' }}
+          >
+            <Text fontSize="xs" color="gray.600">
+              Duration: {Math.round(waveformData.duration)}s
+            </Text>
+            <Text fontSize="xs" color="gray.600">
+              {waveformData.sampleRate}Hz • {waveformData.channels} channel{waveformData.channels > 1 ? 's' : ''}
+            </Text>
+          </VStack>
         </Box>
 
         {/* Canvas container with enhanced styling */}
         <Box
           bg="linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)"
-          borderRadius="xl"
+          borderRadius={{ base: 'lg', md: 'xl' }}
           border="1px solid"
           borderColor="gray.300"
-          p={4}
+          p={{ base: 2, md: 4 }}
           position="relative"
           overflow="hidden"
           w="100%"
-          minH={`${canvasSize.height + 32}px`}
+          minH={`${canvasSize.height + (window.innerWidth <= 768 ? 16 : 32)}px`}
           display="flex"
           justifyContent="center"
           alignItems="center"
-          boxShadow="0 4px 12px rgba(0, 0, 0, 0.1)"
+          boxShadow={{ base: "0 2px 8px rgba(0, 0, 0, 0.1)", md: "0 4px 12px rgba(0, 0, 0, 0.1)" }}
           _hover={{
-            boxShadow: "0 6px 20px rgba(0, 0, 0, 0.15)",
+            boxShadow: { base: "0 4px 12px rgba(0, 0, 0, 0.15)", md: "0 6px 20px rgba(0, 0, 0, 0.15)" },
             transform: "translateY(-1px)"
           }}
           transition="all 0.2s ease"
+          // Mobile touch optimization
+          touchAction="pan-x pan-y"
         >
           <canvas
             ref={canvasRef}
@@ -220,10 +262,10 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
               {/* Progress bar overlay on waveform */}
               <Box
                 position="absolute"
-                top={4}
-                left={4}
-                right={4}
-                bottom={4}
+                top={{ base: 2, md: 4 }}
+                left={{ base: 2, md: 4 }}
+                right={{ base: 2, md: 4 }}
+                bottom={{ base: 2, md: 4 }}
                 pointerEvents="none"
               >
                 <Box
@@ -233,7 +275,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
                   width={`${progress * 100}%`}
                   height="100%"
                   bg="rgba(255, 0, 0, 0.1)"
-                  borderRadius="lg"
+                  borderRadius={{ base: 'md', md: 'lg' }}
                   transition="width 0.3s ease"
                 />
                 <Box
@@ -250,13 +292,13 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
               {/* Progress text overlay */}
               <Box
                 position="absolute"
-                top={2}
-                right={2}
+                top={{ base: 1, md: 2 }}
+                right={{ base: 1, md: 2 }}
                 bg="rgba(255, 255, 255, 0.95)"
-                px={3}
+                px={{ base: 2, md: 3 }}
                 py={1}
                 borderRadius="md"
-                fontSize="sm"
+                fontSize={{ base: 'xs', md: 'sm' }}
                 color="gray.700"
                 fontWeight="medium"
                 border="1px solid"

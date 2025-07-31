@@ -138,7 +138,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         border="2px dashed"
         borderColor={isDragOver ? 'red.500' : 'gray.300'}
         borderRadius="lg"
-        p={8}
+        p={{ base: 6, md: 8 }}
         textAlign="center"
         bg={isDragOver ? 'gray.100' : 'gray.50'}
         cursor={isProcessing ? 'not-allowed' : 'pointer'}
@@ -147,11 +147,19 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           borderColor: 'red.400',
           bg: 'gray.100'
         } : {}}
+        _active={!isProcessing ? {
+          borderColor: 'red.500',
+          bg: 'gray.200',
+          transform: 'scale(0.98)'
+        } : {}}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleClick}
         opacity={isProcessing ? 0.6 : 1}
+        // Mobile touch optimization
+        minH={{ base: '120px', md: '140px' }}
+        touchAction="manipulation"
       >
         <input
           id="file-input"
@@ -162,8 +170,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           disabled={isProcessing}
         />
         
-        <VStack gap={3}>
-          <Text fontSize="xl" fontWeight="medium" color="black">
+        <VStack gap={{ base: 2, md: 3 }}>
+          <Text 
+            fontSize={{ base: 'lg', md: 'xl' }} 
+            fontWeight="medium" 
+            color="black"
+            textAlign="center"
+            px={{ base: 2, md: 0 }}
+          >
             {isProcessing 
               ? 'Processing audio file...' 
               : isDragOver 
@@ -181,7 +195,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           <Button
             colorScheme="red"
             variant="outline"
-            size="lg"
+            size={{ base: 'md', md: 'lg' }}
             disabled={isProcessing}
             onClick={(e) => {
               e.stopPropagation()
@@ -191,24 +205,27 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               opacity: 0.6,
               cursor: 'not-allowed'
             }}
+            // Mobile touch optimization
+            minH={{ base: '44px', md: '48px' }} // iOS recommended touch target size
+            px={{ base: 6, md: 8 }}
           >
             {isProcessing ? 'Processing...' : 'Choose File'}
           </Button>
           
           {!isProcessing && (
-            <VStack gap={1}>
-              <Text fontSize="sm" color="gray.500">
+            <VStack gap={1} textAlign="center">
+              <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.500">
                 Supported formats: {acceptedFormats.map(f => f.toUpperCase()).join(', ')}
               </Text>
-              <Text fontSize="sm" color="gray.500">
+              <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.500">
                 Maximum file size: {formatFileSize(MAX_FILE_SIZE)}
               </Text>
             </VStack>
           )}
           
           {isProcessing && (
-            <VStack gap={1}>
-              <Text fontSize="sm" color="gray.600" fontWeight="medium">
+            <VStack gap={1} textAlign="center">
+              <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600" fontWeight="medium">
                 Please wait while we process your file
               </Text>
               <Text fontSize="xs" color="gray.500">

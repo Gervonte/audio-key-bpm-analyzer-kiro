@@ -88,13 +88,13 @@ describe('ResultsDisplay', () => {
 
     // Check main results
     expect(screen.getByText('Analysis Results')).toBeInTheDocument()
-    expect(screen.getByText('C Major')).toBeInTheDocument()
-    expect(screen.getByText('120')).toBeInTheDocument()
+    expect(screen.getAllByText('C Major')).toHaveLength(2) // Desktop and mobile layouts
+    expect(screen.getAllByText('120')).toHaveLength(2) // Desktop and mobile layouts
 
-    // Check confidence scores as percentages
-    expect(screen.getByText('85% confidence')).toBeInTheDocument()
-    expect(screen.getByText('92% confidence')).toBeInTheDocument()
-    expect(screen.getByText('88%')).toBeInTheDocument()
+    // Check confidence scores as percentages (both desktop and mobile layouts)
+    expect(screen.getAllByText('85% confidence')).toHaveLength(2) // Desktop and mobile layouts
+    expect(screen.getAllByText('92% confidence')).toHaveLength(2) // Desktop and mobile layouts
+    expect(screen.getByText('88%')).toBeInTheDocument() // Overall confidence (single instance)
 
     // Check additional details
     expect(screen.getByText('C')).toBeInTheDocument() // Key signature
@@ -122,10 +122,10 @@ describe('ResultsDisplay', () => {
       />
     )
 
-    expect(screen.getByText('A Minor')).toBeInTheDocument()
+    expect(screen.getAllByText('A Minor')).toHaveLength(2) // Desktop and mobile layouts
     expect(screen.getByText('Am')).toBeInTheDocument()
     expect(screen.getByText('Minor')).toBeInTheDocument()
-    expect(screen.getByText('78% confidence')).toBeInTheDocument()
+    expect(screen.getAllByText('78% confidence')).toHaveLength(2) // Desktop and mobile layouts
   })
 
   it('calls onReset when analyze another file button is clicked', () => {
@@ -211,10 +211,10 @@ describe('ResultsDisplay', () => {
       />
     )
 
-    expect(screen.getByText('F# Major')).toBeInTheDocument()
-    expect(screen.getByText('180')).toBeInTheDocument()
-    expect(screen.getByText('100% confidence')).toBeInTheDocument()
-    expect(screen.getByText('0% confidence')).toBeInTheDocument()
+    expect(screen.getAllByText('F# Major')).toHaveLength(2) // Desktop and mobile layouts
+    expect(screen.getAllByText('180')).toHaveLength(2) // Desktop and mobile layouts
+    expect(screen.getAllByText('100% confidence')).toHaveLength(2) // Desktop and mobile layouts
+    expect(screen.getAllByText('0% confidence')).toHaveLength(2) // Desktop and mobile layouts
     expect(screen.getByText('50%')).toBeInTheDocument()
     expect(screen.getByText('0')).toBeInTheDocument() // Detected beats
     expect(screen.getByText('0.0s')).toBeInTheDocument() // Processing time

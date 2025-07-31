@@ -577,6 +577,9 @@ describe('Integration Tests - Different File Formats', () => {
     const hiddenInput = document.querySelector('input[type="file"]') as HTMLInputElement
     expect(hiddenInput).toBeInTheDocument()
     expect(hiddenInput.accept).toBe('.mp3,.wav,.flac,.m4a')
+    
+    // Verify we have the expected number of supported formats
+    expect(fileFormats).toHaveLength(4)
 
     // Test with one representative file
     const testFile = new File(['fake content'], 'test.mp3', { type: 'audio/mpeg' })

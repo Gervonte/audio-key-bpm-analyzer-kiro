@@ -66,12 +66,18 @@ export const useWaveform = (): UseWaveformReturn => {
     const { width, height } = canvas
     const { peaks } = data
 
+    // Mobile performance optimization
+    const isMobile = window.innerWidth <= 768
+    const devicePixelRatio = window.devicePixelRatio || 1
+    
     console.log('Drawing waveform:', {
       canvasWidth: width,
       canvasHeight: height,
       peaksCount: peaks.length,
       cssWidth: canvas.style.width,
-      cssHeight: canvas.style.height
+      cssHeight: canvas.style.height,
+      isMobile,
+      devicePixelRatio
     })
 
     // Clear canvas with subtle background
@@ -84,65 +90,68 @@ export const useWaveform = (): UseWaveformReturn => {
     const centerY = height / 2
     const maxBarHeight = height * 0.7 // Slightly more height for better visuals
 
-    // Apply smoothing to peaks for prettier waveform
-    const smoothedPeaks = peaks.map((peak, index) => {
+    // Apply smoothing to peaks for prettier waveform (reduce complexity on mobile)
+    const smoothedPeaks = isMobile ? peaks : peaks.map((peak, index) => {
       if (index === 0 || index === peaks.length - 1) return peak
 
-      // Simple 3-point smoothing
+      // Simple 3-point smoothing (skip on mobile for performance)
       const prev = peaks[index - 1] || peak
       const next = peaks[index + 1] || peak
       return (prev + peak * 2 + next) / 4
     })
 
-    // First, draw a subtle filled underlay for depth
-    ctx.globalAlpha = 0.15
-    ctx.fillStyle = 'rgba(255, 100, 150, 0.2)'
-    ctx.beginPath()
-    ctx.moveTo(0, centerY)
+    // Skip complex underlay on mobile for performance
+    if (!isMobile) {
+      // First, draw a subtle filled underlay for depth
+      ctx.globalAlpha = 0.15
+      ctx.fillStyle = 'rgba(255, 100, 150, 0.2)'
+      ctx.beginPath()
+      ctx.moveTo(0, centerY)
 
-    // Create smooth curve through all peaks for underlay
-    for (let i = 0; i < smoothedPeaks.length; i++) {
-      const x = i * barWidth + barWidth / 2
-      const peak = smoothedPeaks[i]
-      const barHeight = Math.min(peak * maxBarHeight, height * 0.7)
-      const topY = centerY - barHeight / 2
+      // Create smooth curve through all peaks for underlay
+      for (let i = 0; i < smoothedPeaks.length; i++) {
+        const x = i * barWidth + barWidth / 2
+        const peak = smoothedPeaks[i]
+        const barHeight = Math.min(peak * maxBarHeight, height * 0.7)
+        const topY = centerY - barHeight / 2
 
-      if (i === 0) {
-        ctx.lineTo(x, topY)
-      } else {
-        // Use quadratic curves for smooth interpolation
-        const prevX = (i - 1) * barWidth + barWidth / 2
-        const controlX = (prevX + x) / 2
-        const prevPeak = smoothedPeaks[i - 1]
-        const prevBarHeight = Math.min(prevPeak * maxBarHeight, height * 0.7)
-        const prevTopY = centerY - prevBarHeight / 2
-        const controlY = (prevTopY + topY) / 2
-        ctx.quadraticCurveTo(controlX, controlY, x, topY)
+        if (i === 0) {
+          ctx.lineTo(x, topY)
+        } else {
+          // Use quadratic curves for smooth interpolation
+          const prevX = (i - 1) * barWidth + barWidth / 2
+          const controlX = (prevX + x) / 2
+          const prevPeak = smoothedPeaks[i - 1]
+          const prevBarHeight = Math.min(prevPeak * maxBarHeight, height * 0.7)
+          const prevTopY = centerY - prevBarHeight / 2
+          const controlY = (prevTopY + topY) / 2
+          ctx.quadraticCurveTo(controlX, controlY, x, topY)
+        }
       }
-    }
 
-    // Complete the underlay shape
-    for (let i = smoothedPeaks.length - 1; i >= 0; i--) {
-      const x = i * barWidth + barWidth / 2
-      const peak = smoothedPeaks[i]
-      const barHeight = Math.min(peak * maxBarHeight, height * 0.7)
-      const bottomY = centerY + barHeight / 2
+      // Complete the underlay shape
+      for (let i = smoothedPeaks.length - 1; i >= 0; i--) {
+        const x = i * barWidth + barWidth / 2
+        const peak = smoothedPeaks[i]
+        const barHeight = Math.min(peak * maxBarHeight, height * 0.7)
+        const bottomY = centerY + barHeight / 2
 
-      if (i === smoothedPeaks.length - 1) {
-        ctx.lineTo(x, bottomY)
-      } else {
-        const nextX = (i + 1) * barWidth + barWidth / 2
-        const controlX = (nextX + x) / 2
-        const nextPeak = smoothedPeaks[i + 1]
-        const nextBarHeight = Math.min(nextPeak * maxBarHeight, height * 0.7)
-        const nextBottomY = centerY + nextBarHeight / 2
-        const controlY = (nextBottomY + bottomY) / 2
-        ctx.quadraticCurveTo(controlX, controlY, x, bottomY)
+        if (i === smoothedPeaks.length - 1) {
+          ctx.lineTo(x, bottomY)
+        } else {
+          const nextX = (i + 1) * barWidth + barWidth / 2
+          const controlX = (nextX + x) / 2
+          const nextPeak = smoothedPeaks[i + 1]
+          const nextBarHeight = Math.min(nextPeak * maxBarHeight, height * 0.7)
+          const nextBottomY = centerY + nextBarHeight / 2
+          const controlY = (nextBottomY + bottomY) / 2
+          ctx.quadraticCurveTo(controlX, controlY, x, bottomY)
+        }
       }
+      ctx.closePath()
+      ctx.fill()
+      ctx.globalAlpha = 1.0
     }
-    ctx.closePath()
-    ctx.fill()
-    ctx.globalAlpha = 1.0
 
     // Now draw the main waveform with enhanced smooth curves
     smoothedPeaks.forEach((peak, index) => {
@@ -217,13 +226,14 @@ export const useWaveform = (): UseWaveformReturn => {
       ctx.closePath()
       ctx.fill()
 
-      // Add elegant black shadow effect for depth
-      if (peak > 0.25) {
+      // Add elegant black shadow effect for depth (simplified on mobile)
+      if (peak > 0.25 && !isMobile) {
         const shadowIntensity = Math.min(7, (peak - 0.25) * 12) // 0 to 8 blur
         const shadowOpacity = Math.min(0.25, (peak - 0.25) * 0.6) // 0 to 0.4 opacity
 
-        // Create multiple shadow layers for depth
-        for (let shadowLayer = 0; shadowLayer < 2; shadowLayer++) {
+        // Create multiple shadow layers for depth (single layer on mobile)
+        const shadowLayers = isMobile ? 1 : 2
+        for (let shadowLayer = 0; shadowLayer < shadowLayers; shadowLayer++) {
           ctx.shadowColor = `rgba(0, 0, 0, ${shadowOpacity * (1 - shadowLayer * 0.2)})`
           ctx.shadowBlur = shadowIntensity * (1 + shadowLayer * 0.5)
           ctx.shadowOffsetX = shadowLayer * 0.5 // Slight horizontal offset
@@ -300,8 +310,8 @@ export const useWaveform = (): UseWaveformReturn => {
           ctx.roundRect(x, y, barWidthAdjusted, barHeight, radius)
           ctx.fill()
 
-          // Add black shadow for processed bars
-          if (peak > 0.25) {
+          // Add black shadow for processed bars (skip on mobile for performance)
+          if (peak > 0.25 && !isMobile) {
             const shadowIntensity = Math.min(6, (peak - 0.25) * 8)
             const shadowOpacity = Math.min(0.5, (peak - 0.25) * 0.7)
             ctx.shadowColor = `rgba(0, 0, 0, ${shadowOpacity})`

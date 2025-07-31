@@ -93,10 +93,10 @@ describe('WaveformDisplay', () => {
       expect(mockGenerateWaveformData).toHaveBeenCalledWith(mockAudioBuffer)
     })
 
-    // Should display audio info
-    expect(screen.getByText(/Duration: 5s/)).toBeInTheDocument()
-    expect(screen.getByText(/Sample Rate: 44100Hz/)).toBeInTheDocument()
-    expect(screen.getByText(/Channels: 1/)).toBeInTheDocument()
+    // Should display audio info (both desktop and mobile layouts)
+    expect(screen.getAllByText(/Duration: 5s/)).toHaveLength(2) // Desktop and mobile layouts
+    expect(screen.getByText(/Sample Rate: 44100Hz/)).toBeInTheDocument() // Desktop only
+    expect(screen.getByText(/44100Hz • 1 channel/)).toBeInTheDocument() // Mobile only
 
     // Should have a canvas element
     const canvas = document.querySelector('canvas')
