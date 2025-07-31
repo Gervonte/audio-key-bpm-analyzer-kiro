@@ -1,33 +1,85 @@
-// AudioProcessor class to coordinate key and BPM detection
+// AudioProcessor class to coordinate key and BPM detection with optimizations
 
 import type { AnalysisResult, KeyResult, BPMResult, ConfidenceScores } from '../types'
 import { KeyDetector } from './keyDetection'
 import { BPMDetector } from './bpmDetection'
+import { workerManager } from './workerManager'
+import { memoryManager } from './memoryManager'
 
 export interface AudioProcessorOptions {
   timeoutMs?: number
   onProgress?: (progress: number) => void
+  useCache?: boolean
+  useWorkers?: boolean
 }
 
 export class AudioProcessor {
   private keyDetector: KeyDetector
   private bpmDetector: BPMDetector
   private abortController: AbortController | null = null
+  private static workerPoolsInitialized = false
 
   constructor() {
     this.keyDetector = new KeyDetector()
     this.bpmDetector = new BPMDetector()
+    this.initializeWorkerPools()
   }
 
   /**
-   * Process audio buffer to detect both key and BPM
+   * Initialize worker pools for audio processing
+   */
+  private initializeWorkerPools(): void {
+    if (AudioProcessor.workerPoolsInitialized) return
+
+    try {
+      // Create worker pools for key and BPM detection
+      workerManager.createPool(
+        'keyDetection',
+        new URL('../workers/keyWorker.ts', import.meta.url).href,
+        2 // Max 2 key detection workers
+      )
+
+      workerManager.createPool(
+        'bpmDetection', 
+        new URL('../workers/bpmWorker.ts', import.meta.url).href,
+        2 // Max 2 BPM detection workers
+      )
+
+      AudioProcessor.workerPoolsInitialized = true
+      console.log('Audio processing worker pools initialized')
+    } catch (error) {
+      console.warn('Failed to initialize worker pools, falling back to main thread:', error)
+    }
+  }
+
+  /**
+   * Process audio buffer to detect both key and BPM with caching and optimization
    */
   async processAudio(
     audioBuffer: AudioBuffer,
     options: AudioProcessorOptions = {}
   ): Promise<AnalysisResult> {
-    const { timeoutMs = 30000, onProgress } = options
+    const { timeoutMs = 30000, onProgress, useCache = true, useWorkers = true } = options
     const startTime = performance.now()
+
+    // Generate cache key based on audio characteristics
+    const cacheKey = this.generateCacheKey(audioBuffer)
+    
+    // Check cache first if enabled
+    if (useCache) {
+      const cachedResult = memoryManager.getCachedResult<AnalysisResult>(cacheKey)
+      if (cachedResult) {
+        console.log('Using cached analysis result')
+        onProgress?.(100)
+        return cachedResult
+      }
+    }
+
+    // Check memory before processing
+    if (memoryManager.isMemoryHigh()) {
+      console.warn('High memory usage detected, triggering cleanup')
+      memoryManager.forceGarbageCollection()
+    }
 
     // Create abort controller for cancellation
     this.abortController = new AbortController()
@@ -46,17 +98,25 @@ export class AudioProcessor {
         })
       })
 
-      // Process audio with progress tracking
-      const analysisPromise = this.performAnalysis(audioBuffer, onProgress)
+      // Process audio with progress tracking and worker optimization
+      const analysisPromise = this.performAnalysis(audioBuffer, onProgress, useWorkers)
 
       // Race between analysis and timeout
       const result = await Promise.race([analysisPromise, timeoutPromise])
 
       const processingTime = performance.now() - startTime
-      return {
+      const finalResult = {
         ...result,
         processingTime
       }
+
+      // Cache the result if enabled
+      if (useCache) {
+        const resultSize = memoryManager.estimateResultSize(finalResult)
+        memoryManager.cacheResult(cacheKey, finalResult, resultSize)
+      }
+
+      return finalResult
     } catch (error) {
       // Clean up on error
       this.cleanup()
@@ -135,11 +195,12 @@ export class AudioProcessor {
   }
 
   /**
-   * Perform the actual analysis with progress tracking
+   * Perform the actual analysis with progress tracking and worker optimization
    */
   private async performAnalysis(
     audioBuffer: AudioBuffer,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    useWorkers: boolean = true
   ): Promise<Omit<AnalysisResult, 'processingTime'>> {
     // Normalize audio first
     onProgress?.(10)
@@ -154,8 +215,8 @@ export class AudioProcessor {
 
     // Run key and BPM detection in parallel for better performance
     const [keyResult, bpmResult] = await Promise.all([
-      this.detectKeyWithProgress(normalizedBuffer, onProgress, 20, 60),
-      this.detectBPMWithProgress(normalizedBuffer, onProgress, 60, 90)
+      this.detectKeyWithProgress(normalizedBuffer, onProgress, 20, 60, useWorkers),
+      this.detectBPMWithProgress(normalizedBuffer, onProgress, 60, 90, useWorkers)
     ])
 
     // Check for cancellation after detection
@@ -182,13 +243,14 @@ export class AudioProcessor {
   }
 
   /**
-   * Detect key with progress reporting
+   * Detect key with progress reporting and optional worker usage
    */
   private async detectKeyWithProgress(
     audioBuffer: AudioBuffer,
     onProgress?: (progress: number) => void,
     startProgress: number = 0,
-    endProgress: number = 50
+    endProgress: number = 50,
+    useWorkers: boolean = true
   ): Promise<KeyResult> {
     const progressCallback = (progress: number) => {
       const scaledProgress = startProgress + (progress / 100) * (endProgress - startProgress)
@@ -196,7 +258,13 @@ export class AudioProcessor {
     }
 
     try {
-      return await this.keyDetector.detectKey(audioBuffer, { onProgress: progressCallback })
+      if (useWorkers && AudioProcessor.workerPoolsInitialized) {
+        // Use worker pool for key detection
+        return await this.detectKeyWithWorker(audioBuffer, progressCallback)
+      } else {
+        // Fall back to main thread
+        return await this.keyDetector.detectKey(audioBuffer, { onProgress: progressCallback })
+      }
     } catch (error) {
       if (error instanceof Error && error.message.includes('cancelled')) {
         throw error
@@ -206,13 +274,14 @@ export class AudioProcessor {
   }
 
   /**
-   * Detect BPM with progress reporting
+   * Detect BPM with progress reporting and optional worker usage
    */
   private async detectBPMWithProgress(
     audioBuffer: AudioBuffer,
     onProgress?: (progress: number) => void,
     startProgress: number = 50,
-    endProgress: number = 90
+    endProgress: number = 90,
+    useWorkers: boolean = true
   ): Promise<BPMResult> {
     const progressCallback = (progress: number) => {
       const scaledProgress = startProgress + (progress / 100) * (endProgress - startProgress)
@@ -220,7 +289,13 @@ export class AudioProcessor {
     }
 
     try {
-      return await this.bpmDetector.detectBPM(audioBuffer, { onProgress: progressCallback })
+      if (useWorkers && AudioProcessor.workerPoolsInitialized) {
+        // Use worker pool for BPM detection
+        return await this.detectBPMWithWorker(audioBuffer, progressCallback)
+      } else {
+        // Fall back to main thread
+        return await this.bpmDetector.detectBPM(audioBuffer, { onProgress: progressCallback })
+      }
     } catch (error) {
       if (error instanceof Error && error.message.includes('cancelled')) {
         throw error
@@ -230,9 +305,99 @@ export class AudioProcessor {
   }
 
   /**
-   * Clean up resources
+   * Detect key using worker pool
+   */
+  private async detectKeyWithWorker(
+    audioBuffer: AudioBuffer,
+    _onProgress?: (progress: number) => void
+  ): Promise<KeyResult> {
+    // Prepare audio data for worker
+    const channelData: Float32Array[] = []
+    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+      channelData.push(new Float32Array(audioBuffer.getChannelData(channel)))
+    }
+
+    const audioData = {
+      channelData,
+      sampleRate: audioBuffer.sampleRate,
+      length: audioBuffer.length,
+      numberOfChannels: audioBuffer.numberOfChannels
+    }
+
+    return await workerManager.executeTask<{ audioData: typeof audioData }, KeyResult>(
+      'keyDetection',
+      'DETECT_KEY',
+      { audioData },
+      30000
+    )
+  }
+
+  /**
+   * Detect BPM using worker pool
+   */
+  private async detectBPMWithWorker(
+    audioBuffer: AudioBuffer,
+    _onProgress?: (progress: number) => void
+  ): Promise<BPMResult> {
+    // Prepare audio data for worker
+    const channelData: Float32Array[] = []
+    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
+      channelData.push(new Float32Array(audioBuffer.getChannelData(channel)))
+    }
+
+    const audioBufferData = {
+      sampleRate: audioBuffer.sampleRate,
+      length: audioBuffer.length,
+      numberOfChannels: audioBuffer.numberOfChannels,
+      channelData
+    }
+
+    return await workerManager.executeTask<{ audioBufferData: typeof audioBufferData }, BPMResult>(
+      'bpmDetection',
+      'DETECT_BPM',
+      { audioBufferData },
+      30000
+    )
+  }
+
+  /**
+   * Generate cache key for audio buffer
+   */
+  private generateCacheKey(audioBuffer: AudioBuffer): string {
+    // Create a hash based on audio characteristics
+    const characteristics = {
+      duration: audioBuffer.duration,
+      sampleRate: audioBuffer.sampleRate,
+      channels: audioBuffer.numberOfChannels,
+      length: audioBuffer.length
+    }
+    
+    // Simple hash of characteristics
+    const hash = JSON.stringify(characteristics)
+    return `audio_analysis_${btoa(hash).slice(0, 16)}`
+  }
+
+  /**
+   * Clean up resources and memory
    */
   private cleanup(): void {
     this.abortController = null
+    
+    // Trigger garbage collection if memory is high
+    if (memoryManager.isMemoryHigh()) {
+      memoryManager.forceGarbageCollection()
+    }
+  }
+
+  /**
+   * Clean up all worker pools (call on app shutdown)
+   */
+  static cleanup(): void {
+    try {
+      workerManager.terminateAll()
+      AudioProcessor.workerPoolsInitialized = false
+    } catch (error) {
+      console.warn('Error during AudioProcessor cleanup:', error)
+    }
   }
 }

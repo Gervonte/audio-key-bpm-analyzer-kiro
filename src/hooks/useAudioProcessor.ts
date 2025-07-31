@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import type { AnalysisResult } from '../types'
 import { AudioProcessor } from '../utils/audioProcessor'
+import { memoryManager } from '../utils/memoryManager'
 
 export interface UseAudioProcessorResult {
   processAudio: (audioBuffer: AudioBuffer) => Promise<AnalysisResult>
@@ -70,6 +71,12 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
     setIsProcessing(true)
     setError(null)
 
+    // Clean up previous AudioBuffer if memory is high
+    if (memoryManager.isMemoryHigh()) {
+      console.log('High memory usage detected, triggering cleanup before processing')
+      memoryManager.forceGarbageCollection()
+    }
+
     try {
       // Set up progress tracking
       const onProgress = (progressValue: number) => {
@@ -83,10 +90,12 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
         }, timeoutMs)
       })
 
-      // Process audio with progress tracking
+      // Process audio with progress tracking and optimizations
       const processingPromise = processorRef.current.processAudio(audioBuffer, {
         timeoutMs,
-        onProgress
+        onProgress,
+        useCache: true,
+        useWorkers: true
       })
 
       // Race between processing and timeout
@@ -101,6 +110,9 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
       setProgress(100)
       setIsProcessing(false)
       setError(null)
+
+      // Clean up AudioBuffer after processing to free memory
+      memoryManager.cleanupAudioBuffer(audioBuffer)
 
       return result
 

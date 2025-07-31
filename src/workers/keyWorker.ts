@@ -1,26 +1,11 @@
 import { KeyDetector } from '../utils/keyDetection'
 import type { KeyResult } from '../types'
 
-// Worker message types
-interface KeyWorkerMessage {
-  type: 'DETECT_KEY'
-  audioData: {
-    channelData: Float32Array[]
-    sampleRate: number
-    length: number
-    numberOfChannels: number
-  }
-}
-
-interface KeyWorkerResponse {
-  type: 'KEY_RESULT' | 'KEY_ERROR'
-  result?: KeyResult
-  error?: string
-}
+// Worker message types (kept for documentation but not used in new worker manager approach)
 
 // Handle messages from main thread
-self.onmessage = async (event: MessageEvent<KeyWorkerMessage>) => {
-  const { type, audioData } = event.data
+self.onmessage = async (event: MessageEvent) => {
+  const { taskId, type, audioData } = event.data
 
   if (type === 'DETECT_KEY') {
     try {
@@ -34,23 +19,21 @@ self.onmessage = async (event: MessageEvent<KeyWorkerMessage>) => {
 
       // Create key detector and analyze
       const keyDetector = new KeyDetector(audioData.sampleRate)
-      const result = await keyDetector.detectKey(audioBuffer)
+      const result: KeyResult = await keyDetector.detectKey(audioBuffer)
 
-      // Send result back to main thread
-      const response: KeyWorkerResponse = {
+      // Send result back to main thread with task ID
+      self.postMessage({
+        taskId,
         type: 'KEY_RESULT',
         result
-      }
-      
-      self.postMessage(response)
+      })
     } catch (error) {
-      // Send error back to main thread
-      const response: KeyWorkerResponse = {
+      // Send error back to main thread with task ID
+      self.postMessage({
+        taskId,
         type: 'KEY_ERROR',
         error: error instanceof Error ? error.message : 'Unknown error occurred'
-      }
-      
-      self.postMessage(response)
+      })
     }
   }
 }

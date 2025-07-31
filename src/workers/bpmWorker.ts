@@ -20,8 +20,8 @@ export interface BPMWorkerResponse {
 }
 
 // Worker message handler
-self.onmessage = async (event: MessageEvent<BPMWorkerMessage>) => {
-  const { type, audioBufferData } = event.data
+self.onmessage = async (event: MessageEvent) => {
+  const { taskId, type, audioBufferData } = event.data
 
   if (type === 'DETECT_BPM') {
     try {
@@ -42,21 +42,19 @@ self.onmessage = async (event: MessageEvent<BPMWorkerMessage>) => {
       const detector = new BPMDetector()
       const result = await detector.detectBPM(audioBuffer)
 
-      // Send result back to main thread
-      const response: BPMWorkerResponse = {
+      // Send result back to main thread with task ID
+      self.postMessage({
+        taskId,
         type: 'BPM_RESULT',
         result
-      }
-      
-      self.postMessage(response)
+      })
     } catch (error) {
-      // Send error back to main thread
-      const response: BPMWorkerResponse = {
+      // Send error back to main thread with task ID
+      self.postMessage({
+        taskId,
         type: 'BPM_ERROR',
         error: error instanceof Error ? error.message : 'Unknown BPM detection error'
-      }
-      
-      self.postMessage(response)
+      })
     }
   }
 }
