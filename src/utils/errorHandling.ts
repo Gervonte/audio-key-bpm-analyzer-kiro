@@ -23,8 +23,41 @@ export type ErrorType =
 /**
  * Categorizes and provides detailed information about errors
  */
-export function categorizeError(error: Error | string): ErrorInfo {
-  const errorMessage = typeof error === 'string' ? error : error.message
+export function categorizeError(error: Error | string | null | undefined): ErrorInfo {
+  // Handle null/undefined errors
+  if (!error) {
+    return {
+      type: 'unknown',
+      message: 'Unknown error occurred',
+      suggestion: 'Please try again. If the problem persists, try refreshing the page or using a different audio file.',
+      canRetry: true,
+      severity: 'error'
+    }
+  }
+
+  // Extract error message safely
+  let errorMessage: string
+  if (typeof error === 'string') {
+    errorMessage = error || 'Unknown error occurred'
+  } else if (error instanceof Error && error.message) {
+    errorMessage = error.message
+  } else if (error && typeof error === 'object' && 'message' in error && error.message) {
+    errorMessage = String(error.message)
+  } else {
+    errorMessage = 'Unknown error occurred'
+  }
+
+  // Handle empty error messages
+  if (!errorMessage.trim()) {
+    return {
+      type: 'unknown',
+      message: 'Unknown error occurred',
+      suggestion: 'Please try again. If the problem persists, try refreshing the page or using a different audio file.',
+      canRetry: true,
+      severity: 'error'
+    }
+  }
+
   const lowerMessage = errorMessage.toLowerCase()
 
   // File validation errors

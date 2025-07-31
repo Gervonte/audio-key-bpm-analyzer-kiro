@@ -266,10 +266,11 @@ export class AudioProcessor {
         return await this.keyDetector.detectKey(audioBuffer, { onProgress: progressCallback })
       }
     } catch (error) {
-      if (error instanceof Error && error.message.includes('cancelled')) {
+      if (error instanceof Error && error.message && error.message.includes('cancelled')) {
         throw error
       }
-      throw new Error(`Key detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      const errorMessage = error instanceof Error && error.message ? error.message : 'Unknown error'
+      throw new Error(`Key detection failed: ${errorMessage}`)
     }
   }
 
@@ -297,10 +298,11 @@ export class AudioProcessor {
         return await this.bpmDetector.detectBPM(audioBuffer, { onProgress: progressCallback })
       }
     } catch (error) {
-      if (error instanceof Error && error.message.includes('cancelled')) {
+      if (error instanceof Error && error.message && error.message.includes('cancelled')) {
         throw error
       }
-      throw new Error(`BPM detection failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+      const errorMessage = error instanceof Error && error.message ? error.message : 'Unknown error'
+      throw new Error(`BPM detection failed: ${errorMessage}`)
     }
   }
 

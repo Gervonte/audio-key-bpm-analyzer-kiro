@@ -55,11 +55,6 @@ export function useRetry<T>(
     try {
       setAttemptCount(currentAttempt + 1)
       
-      if (currentAttempt > 0) {
-        setIsRetrying(true)
-        onRetryAttempt?.(currentAttempt, lastError!)
-      }
-
       const result = await asyncFunction(...args)
       
       // Success - reset state
@@ -77,6 +72,12 @@ export function useRetry<T>(
       const shouldRetry = errorInfo.canRetry && currentAttempt < maxAttempts - 1
 
       if (shouldRetry) {
+        // Call retry callback before attempting retry
+        if (currentAttempt > 0) {
+          setIsRetrying(true)
+          onRetryAttempt?.(currentAttempt, err)
+        }
+
         // Calculate delay based on error type and attempt count
         const errorTypeDelay = getRetryDelay(errorInfo.type)
         const attemptDelay = baseDelay * Math.pow(backoffMultiplier, currentAttempt)
@@ -96,7 +97,7 @@ export function useRetry<T>(
         throw err
       }
     }
-  }, [asyncFunction, maxAttempts, baseDelay, backoffMultiplier, onRetryAttempt, lastError])
+  }, [asyncFunction, maxAttempts, baseDelay, backoffMultiplier, onRetryAttempt])
 
   const execute = useCallback(async (...args: any[]): Promise<T> => {
     setLastArgs(args)
@@ -132,7 +133,7 @@ export function useAudioProcessingRetry<T>(
     baseDelay: 1500,
     backoffMultiplier: 2,
     onRetryAttempt: (attempt, error) => {
-      console.log(`Audio processing retry attempt ${attempt}:`, error.message)
+      console.log(`Audio processing retry attempt ${attempt}:`, error.message || 'Unknown error')
     }
   })
 }
@@ -146,7 +147,7 @@ export function useFileOperationRetry<T>(
     baseDelay: 1000,
     backoffMultiplier: 1.5,
     onRetryAttempt: (attempt, error) => {
-      console.log(`File operation retry attempt ${attempt}:`, error.message)
+      console.log(`File operation retry attempt ${attempt}:`, error.message || 'Unknown error')
     }
   })
 }

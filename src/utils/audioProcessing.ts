@@ -239,6 +239,11 @@ export function isCorruptedAudioError(error: Error): boolean {
     'decoding failed'
   ]
   
+  // Safely handle null/undefined error or message
+  if (!error || !error.message) {
+    return false
+  }
+  
   const errorMessage = error.message.toLowerCase()
   return corruptionIndicators.some(indicator => errorMessage.includes(indicator))
 }

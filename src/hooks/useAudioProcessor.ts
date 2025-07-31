@@ -120,7 +120,10 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
       // Handle different types of errors with more specific messages
       let errorMessage = 'Audio processing failed'
       
-      if (error instanceof Error) {
+      // Safely handle null/undefined errors
+      if (!error) {
+        errorMessage = 'Audio processing failed with unknown error'
+      } else if (error instanceof Error && error.message) {
         if (error.message.includes('timed out') || error.message.includes('timeout')) {
           errorMessage = 'Audio processing timed out after 30 seconds. Please try with a shorter audio file (under 5 minutes) or a less complex track.'
         } else if (error.message.includes('cancelled') || error.message.includes('aborted')) {
@@ -139,6 +142,14 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
           // Use the original error message if it's descriptive enough
           errorMessage = error.message
         }
+      } else if (error && typeof error === 'object' && 'toString' in error) {
+        try {
+          errorMessage = error.toString()
+        } catch {
+          errorMessage = 'Audio processing failed with unreadable error'
+        }
+      } else if (typeof error === 'string') {
+        errorMessage = error
       }
 
       setError(errorMessage)
