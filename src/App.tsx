@@ -214,7 +214,9 @@ function App() {
     return () => {
       cleanupAudioResources()
       // Clean up worker pools and memory manager
-      AudioProcessor.cleanup()
+      if (typeof AudioProcessor.cleanup === 'function') {
+        AudioProcessor.cleanup()
+      }
       memoryManager.stopMemoryMonitoring()
     }
   }, [cleanupAudioResources])

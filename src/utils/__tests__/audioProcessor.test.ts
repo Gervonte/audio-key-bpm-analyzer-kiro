@@ -110,7 +110,8 @@ describe('AudioProcessor', () => {
 
     it('should call progress callback with increasing values', async () => {
       await processor.processAudio(mockAudioBuffer, {
-        onProgress: progressCallback
+        onProgress: progressCallback,
+        useCache: false // Disable caching for test
       })
 
       expect(progressCallback).toHaveBeenCalledWith(10) // Normalization
@@ -130,13 +131,14 @@ describe('AudioProcessor', () => {
       await expect(
         processor.processAudio(mockAudioBuffer, {
           timeoutMs: shortTimeoutMs,
-          onProgress: progressCallback
+          onProgress: progressCallback,
+          useCache: false
         })
       ).rejects.toThrow('Audio processing timed out after 30 seconds')
     })
 
     it('should handle cancellation', async () => {
-      const processingPromise = processor.processAudio(mockAudioBuffer)
+      const processingPromise = processor.processAudio(mockAudioBuffer, { useCache: false })
 
       // Cancel immediately
       processor.cancelProcessing()
@@ -149,7 +151,7 @@ describe('AudioProcessor', () => {
       mockKeyDetector.detectKey.mockRejectedValue(new Error('Key detection failed'))
 
       await expect(
-        processor.processAudio(mockAudioBuffer)
+        processor.processAudio(mockAudioBuffer, { useCache: false })
       ).rejects.toThrow('Key detection failed')
     })
 
@@ -158,7 +160,7 @@ describe('AudioProcessor', () => {
       mockBPMDetector.detectBPM.mockRejectedValue(new Error('BPM detection failed'))
 
       await expect(
-        processor.processAudio(mockAudioBuffer)
+        processor.processAudio(mockAudioBuffer, { useCache: false })
       ).rejects.toThrow('BPM detection failed')
     })
   })
@@ -211,7 +213,7 @@ describe('AudioProcessor', () => {
       mockKeyDetector.detectKey.mockRejectedValue('Unknown error')
 
       await expect(
-        processor.processAudio(mockAudioBuffer)
+        processor.processAudio(mockAudioBuffer, { useCache: false })
       ).rejects.toThrow('Key detection failed: Unknown error')
     })
 
@@ -219,7 +221,7 @@ describe('AudioProcessor', () => {
       mockKeyDetector.detectKey.mockRejectedValue(new Error('Test error'))
 
       try {
-        await processor.processAudio(mockAudioBuffer)
+        await processor.processAudio(mockAudioBuffer, { useCache: false })
       } catch (error) {
         // Error expected
       }
@@ -232,14 +234,14 @@ describe('AudioProcessor', () => {
         mode: 'major'
       })
 
-      const result = await processor.processAudio(mockAudioBuffer)
+      const result = await processor.processAudio(mockAudioBuffer, { useCache: false })
       expect(result.key.keyName).toBe('D Major')
     })
   })
 
   describe('confidence calculation', () => {
     it('should calculate overall confidence correctly', async () => {
-      const result = await processor.processAudio(mockAudioBuffer)
+      const result = await processor.processAudio(mockAudioBuffer, { useCache: false })
 
       expect(result.confidence.overall).toBe((0.85 + 0.90) / 2)
       expect(result.confidence.key).toBe(0.85)
@@ -260,7 +262,7 @@ describe('AudioProcessor', () => {
         detectedBeats: 5
       })
 
-      const result = await processor.processAudio(mockAudioBuffer)
+      const result = await processor.processAudio(mockAudioBuffer, { useCache: false })
 
       expect(result.confidence.overall).toBeCloseTo(0.15)
       expect(result.confidence.key).toBe(0.1)
