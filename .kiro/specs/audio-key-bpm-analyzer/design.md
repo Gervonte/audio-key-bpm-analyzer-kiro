@@ -8,6 +8,10 @@ The Audio Key and BPM Analyzer is a web application that provides real-time anal
 
 The application follows a client-side architecture with the following key components:
 
+**Key Architectural Decisions:**
+- **Single-Page Application**: All functionality operates within a single page without requiring page refreshes, allowing users to upload multiple files sequentially
+- **Client-Side Processing**: All audio analysis is performed locally in the browser for privacy and performance
+
 ```mermaid
 graph TB
     A[User Interface] --> B[File Upload Handler]
@@ -32,8 +36,9 @@ graph TB
 - **UI Framework**: Chakra UI for consistent, accessible, and responsive design components
 - **Audio Processing**: Web Audio API for audio file handling and preprocessing
 - **Waveform Visualization**: HTML5 Canvas for rendering red waveform display
-- **Key Detection**: Chroma.js or similar library for musical key analysis
-- **BPM Detection**: Web-based BPM detection algorithm (custom implementation or library like `web-audio-beat-detector`)
+- **Audio Analysis Engine**: essentia.js for both key detection and BPM detection algorithms
+- **Key Detection**: essentia.js key detection algorithms with chroma feature extraction
+- **BPM Detection**: essentia.js tempo estimation algorithms with onset detection
 
 ### Design System
 - **Color Scheme**: Minimal 3-color palette
@@ -96,12 +101,13 @@ const useAudioProcessor = () => {
 **Responsibilities**:
 - Audio preprocessing and normalization
 - Coordinate key and BPM detection
-- Manage processing progress and timeouts
+- Manage processing progress and timeouts (30 second limit)
 - Handle analysis errors
+- Prevent multiple simultaneous uploads during processing
 - Integrate with React state management
 
 ### 3. Key Detection Module
-**Purpose**: Analyze audio to determine musical key
+**Purpose**: Analyze audio to determine musical key using essentia.js algorithms
 
 **Interface**:
 ```typescript
@@ -113,13 +119,14 @@ class KeyDetector {
 ```
 
 **Responsibilities**:
-- Extract chroma features from audio
-- Apply key detection algorithms (Krumhansl-Schmuckler or similar)
-- Return key name and confidence score
+- Extract chroma features from audio using essentia.js
+- Apply essentia.js key detection algorithms for accurate musical key analysis
+- Return key name, key signature, and confidence score
 - Handle major/minor key classification
+- Ensure reasonable accuracy for hip hop instrumental analysis
 
 ### 4. BPM Detection Module
-**Purpose**: Analyze audio to determine beats per minute
+**Purpose**: Analyze audio to determine beats per minute using essentia.js algorithms
 
 **Interface**:
 ```typescript
@@ -131,10 +138,11 @@ class BPMDetector {
 ```
 
 **Responsibilities**:
-- Extract onset detection from audio
-- Apply tempo estimation algorithms
-- Filter and validate BPM results
-- Handle tempo variations and provide stable BPM
+- Extract onset detection from audio using essentia.js
+- Apply essentia.js tempo estimation algorithms for accurate BPM detection
+- Filter and validate BPM results within ±2 BPM tolerance
+- Handle tempo variations and provide stable BPM as whole numbers
+- Ensure reasonable accuracy for hip hop instrumental analysis
 
 ### 5. Waveform Visualization Component
 **Purpose**: Display audio waveform similar to SoundCloud interface
@@ -258,9 +266,10 @@ interface AppState {
 - **Corrupted File**: Indicate file may be damaged
 
 ### Processing Errors
-- **Analysis Timeout**: Show timeout message and suggest shorter file
+- **Analysis Timeout**: Show timeout message after 30 seconds and suggest shorter file
 - **Insufficient Audio Data**: Indicate file may be too short or quiet
 - **Processing Failure**: Generic error with retry option
+- **Uncertain Results**: Display appropriate error or uncertainty message when analysis produces low confidence results
 
 ### Browser Compatibility
 - **Web Audio API Unavailable**: Show browser compatibility message
