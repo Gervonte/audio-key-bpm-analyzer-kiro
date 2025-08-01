@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This feature enables users to upload hip hop instrumental audio files and automatically analyze them to determine the musical key and beats per minute (BPM). The web application will provide a simple interface for file upload and display the analysis results in a user-friendly format.
+This feature enables users to upload hip hop instrumental audio files and automatically analyze them to determine the musical key and beats per minute (BPM) using essentia.js algorithms. The web application will provide a simple interface for file upload and display the analysis results in a user-friendly format.
 
 ## Requirements
 
@@ -14,7 +14,7 @@ This feature enables users to upload hip hop instrumental audio files and automa
 
 1. WHEN a user visits the web application THEN the system SHALL display a file upload interface
 2. WHEN a user selects an audio file THEN the system SHALL validate that the file is in a supported audio format (MP3, WAV, FLAC, M4A)
-3. WHEN a user uploads a valid audio file THEN the system SHALL process the file and analyze its musical properties
+3. WHEN a user uploads a valid audio file THEN the system SHALL process the file using essentia.js and analyze its musical properties
 4. WHEN the analysis is complete THEN the system SHALL display the detected key and BPM prominently
 5. IF the file format is unsupported THEN the system SHALL display an error message indicating supported formats
 
@@ -24,8 +24,8 @@ This feature enables users to upload hip hop instrumental audio files and automa
 
 #### Acceptance Criteria
 
-1. WHEN the system analyzes an audio file THEN the system SHALL detect the musical key with reasonable accuracy
-2. WHEN the system analyzes an audio file THEN the system SHALL detect the BPM with reasonable accuracy (within ±2 BPM tolerance)
+1. WHEN the system analyzes an audio file THEN the system SHALL detect the musical key using essentia.js key detection algorithms with reasonable accuracy
+2. WHEN the system analyzes an audio file THEN the system SHALL detect the BPM using essentia.js tempo estimation algorithms with reasonable accuracy (within ±2 BPM tolerance)
 3. WHEN displaying the key THEN the system SHALL show both the key name (e.g., "C Major", "A Minor") and the key signature
 4. WHEN displaying the BPM THEN the system SHALL show the tempo as a whole number
 5. IF the analysis fails or produces uncertain results THEN the system SHALL display an appropriate error or uncertainty message
