@@ -32,7 +32,7 @@ self.onmessage = async (event: MessageEvent) => {
       self.postMessage({
         taskId,
         type: 'KEY_ERROR',
-        error: error instanceof Error && error.message ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'Unknown error occurred'
       })
     }
   }

@@ -140,8 +140,7 @@ export class WorkerManager {
       worker.removeEventListener('error', errorHandler)
 
       this.completeTask(pool, worker, task.id)
-      const errorMessage = error && error.message ? error.message : 'Unknown worker error'
-      task.reject(new Error(`Worker error: ${errorMessage}`))
+      task.reject(new Error(`Worker error: ${error.message}`))
     }
 
     worker.addEventListener('message', messageHandler)

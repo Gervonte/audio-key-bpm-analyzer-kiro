@@ -94,15 +94,6 @@ function App() {
 
 
   const handleFileSelect = async (file: File) => {
-    if (!file) {
-      console.error('No file provided to handleFileSelect')
-      setAppState(prev => ({
-        ...prev,
-        error: 'No file selected'
-      }))
-      return
-    }
-
     console.log('Selected file:', file.name, file.size, file.type)
 
     // Cleanup previous resources
@@ -152,19 +143,14 @@ function App() {
         } catch (analysisError) {
           console.error('Analysis failed:', analysisError)
           setProcessingStage('error')
-          const errorMessage = analysisError instanceof Error && analysisError.message 
-            ? analysisError.message 
-            : 'Analysis failed'
           setAppState(prev => ({
             ...prev,
-            error: errorMessage
+            error: analysisError instanceof Error ? analysisError.message : 'Analysis failed'
           }))
         }
       }
     } catch (err) {
-      const errorMessage = err instanceof Error && err.message 
-        ? err.message 
-        : 'Failed to load audio file'
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load audio file'
       setProcessingStage('error')
       setAppState(prev => ({
         ...prev,

@@ -50,11 +50,6 @@ export const useFileUpload = (): UseFileUploadReturn => {
 
     let audioContext: AudioContext | null = null
 
-    // Validate file parameter
-    if (!file) {
-      throw new Error('No file provided')
-    }
-
     // Check memory before loading large files
     if (memoryManager.isMemoryHigh()) {
       console.warn('High memory usage detected before file loading, triggering cleanup')

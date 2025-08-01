@@ -46,11 +46,6 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   }, [])
 
   const handleFileSelect = useCallback((file: File) => {
-    if (!file) {
-      setError('No file selected')
-      return
-    }
-    
     const validation = handleFileValidation(file)
     if (validation.isValid) {
       onFileSelect(file)
@@ -79,19 +74,15 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     if (isProcessing) return
 
     const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0 && files[0]) {
+    if (files.length > 0) {
       handleFileSelect(files[0])
-    } else {
-      setError('No valid file dropped')
     }
   }, [isProcessing, handleFileSelect])
 
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (files && files.length > 0 && files[0]) {
+    if (files && files.length > 0) {
       handleFileSelect(files[0])
-    } else {
-      setError('No file selected')
     }
     // Reset input value to allow selecting the same file again
     e.target.value = ''

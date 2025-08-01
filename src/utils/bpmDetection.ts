@@ -36,18 +36,18 @@ export class BPMDetector {
     const { onProgress } = options
     try {
       onProgress?.(10)
-
+      
       // Preprocess audio: convert to mono and normalize
       const monoBuffer = convertToMono(audioBuffer)
       const processedBuffer = preprocessAudioBuffer(monoBuffer)
-
+      
       this.sampleRate = processedBuffer.sampleRate
       onProgress?.(30)
-
+      
       // Extract onset times using spectral flux
-      const onsetData = await this.extractOnsets(processedBuffer)
+      const onsetData = this.extractOnsets(processedBuffer)
       onProgress?.(60)
-
+      
       if (onsetData.times.length < 4) {
         onProgress?.(100)
         return {
@@ -56,18 +56,18 @@ export class BPMDetector {
           detectedBeats: onsetData.times.length
         }
       }
-
+      
       // Calculate tempo using autocorrelation
       const tempoCandidates = this.calculateTempoCandidates(onsetData)
       onProgress?.(80)
-
+      
       // Select best tempo candidate
       const bestTempo = this.selectBestTempo(tempoCandidates)
-
+      
       // Validate and filter BPM result
       const validatedBPM = this.validateBPM(bestTempo)
       onProgress?.(100)
-
+      
       return {
         bpm: Math.round(validatedBPM.bpm),
         confidence: validatedBPM.confidence,
@@ -84,78 +84,40 @@ export class BPMDetector {
   }
 
   /**
-   * Trim audio buffer to a manageable size for analysis
-   */
-  private trimAudioForAnalysis(audioBuffer: AudioBuffer, maxDurationSeconds: number): AudioBuffer {
-    const maxSamples = maxDurationSeconds * audioBuffer.sampleRate
-
-    if (audioBuffer.length <= maxSamples) {
-      return audioBuffer
-    }
-
-    // Take a segment from the middle of the track (usually has the most consistent rhythm)
-    const startSample = Math.floor((audioBuffer.length - maxSamples) / 2)
-
-    // Create new AudioBuffer with trimmed data
-    const trimmedBuffer = new AudioBuffer({
-      numberOfChannels: audioBuffer.numberOfChannels,
-      length: maxSamples,
-      sampleRate: audioBuffer.sampleRate
-    })
-
-    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-      const originalData = audioBuffer.getChannelData(channel)
-      const trimmedData = trimmedBuffer.getChannelData(channel)
-
-      for (let i = 0; i < maxSamples; i++) {
-        trimmedData[i] = originalData[startSample + i]
-      }
-    }
-
-    return trimmedBuffer
-  }
-
-  /**
    * Extract onset times using spectral flux method
    */
-  private async extractOnsets(audioBuffer: AudioBuffer): Promise<OnsetData> {
+  private extractOnsets(audioBuffer: AudioBuffer): OnsetData {
     const audioData = audioBuffer.getChannelData(0)
     const onsetTimes: number[] = []
     const onsetStrengths: number[] = []
-
+    
     // Calculate spectral flux for onset detection
     const windowSize = this.frameSize
     const hopSize = this.hopSize
     const numFrames = Math.floor((audioData.length - windowSize) / hopSize)
-
+    
     let previousSpectrum: number[] = []
-
+    
     for (let frame = 0; frame < numFrames; frame++) {
       const startSample = frame * hopSize
-
-      // Ensure we have enough samples for analysis
-      if (startSample + windowSize > audioData.length) break
-
       const frameData = audioData.slice(startSample, startSample + windowSize)
-
+      
       // Apply Hanning window
       const windowedFrame = this.applyHanningWindow(frameData)
-
-      // Calculate magnitude spectrum using simplified method
+      
+      // Calculate magnitude spectrum using FFT approximation
       const spectrum = this.calculateMagnitudeSpectrum(windowedFrame)
-
+      
       if (previousSpectrum.length > 0) {
         // Calculate spectral flux (positive differences)
         let flux = 0
-        const minLength = Math.min(spectrum.length, previousSpectrum.length)
-
-        for (let bin = 0; bin < minLength; bin++) {
+        for (let bin = 0; bin < Math.min(spectrum.length, previousSpectrum.length); bin++) {
           const diff = spectrum[bin] - previousSpectrum[bin]
           if (diff > 0) {
             flux += diff
           }
         }
-
+        
         // Peak picking for onset detection
         if (flux > 0) {
           const timeInSeconds = startSample / this.sampleRate
@@ -163,15 +125,10 @@ export class BPMDetector {
           onsetStrengths.push(flux)
         }
       }
-
+      
       previousSpectrum = spectrum
-
-      // Yield control periodically to prevent blocking
-      if (frame % 100 === 0) {
-        await new Promise(resolve => setTimeout(resolve, 0))
-      }
     }
-
+    
     // Apply peak picking to reduce false positives
     return this.peakPicking({ times: onsetTimes, strengths: onsetStrengths })
   }
@@ -189,32 +146,26 @@ export class BPMDetector {
   }
 
   /**
-   * Calculate magnitude spectrum (simplified and optimized)
+   * Calculate magnitude spectrum (simplified FFT approximation)
    */
   private calculateMagnitudeSpectrum(frame: Float32Array): number[] {
     const spectrum: number[] = []
-    const numBins = 32 // Reduced number of bins for speed
-    const binSize = Math.floor(frame.length / numBins)
-
-    // Simplified magnitude calculation
+    const numBins = Math.floor(frame.length / 2)
+    
+    // Simplified magnitude calculation using overlapping windows
     for (let bin = 0; bin < numBins; bin++) {
       let magnitude = 0
+      const binSize = Math.floor(frame.length / numBins)
       const start = bin * binSize
       const end = Math.min(start + binSize, frame.length)
-
-      // Use RMS instead of simple average for better onset detection
-      let sumSquares = 0
-      let count = 0
-
+      
       for (let i = start; i < end; i++) {
-        sumSquares += frame[i] * frame[i]
-        count++
+        magnitude += Math.abs(frame[i])
       }
-
-      magnitude = count > 0 ? Math.sqrt(sumSquares / count) : 0
-      spectrum.push(magnitude)
+      
+      spectrum.push(magnitude / binSize)
     }
-
+    
     return spectrum
   }
 
@@ -225,29 +176,29 @@ export class BPMDetector {
     const filteredTimes: number[] = []
     const filteredStrengths: number[] = []
     const minInterval = 0.05 // Minimum 50ms between onsets
-
+    
     for (let i = 0; i < onsetData.times.length; i++) {
       const currentTime = onsetData.times[i]
       const currentStrength = onsetData.strengths[i]
-
+      
       // Check if this is a local maximum
       let isLocalMax = true
       const windowSize = 3
-
+      
       for (let j = Math.max(0, i - windowSize); j <= Math.min(onsetData.times.length - 1, i + windowSize); j++) {
         if (j !== i && onsetData.strengths[j] > currentStrength) {
           isLocalMax = false
           break
         }
       }
-
+      
       // Check minimum interval constraint
       if (isLocalMax && (filteredTimes.length === 0 || currentTime - filteredTimes[filteredTimes.length - 1] > minInterval)) {
         filteredTimes.push(currentTime)
         filteredStrengths.push(currentStrength)
       }
     }
-
+    
     return { times: filteredTimes, strengths: filteredStrengths }
   }  /**
  
@@ -255,52 +206,52 @@ export class BPMDetector {
    */
   private calculateTempoCandidates(onsetData: OnsetData): TempoCandidate[] {
     const candidates: TempoCandidate[] = []
-
+    
     if (onsetData.times.length < 4) {
       return candidates
     }
-
+    
     // Calculate inter-onset intervals (IOIs)
     const intervals: number[] = []
     for (let i = 1; i < onsetData.times.length; i++) {
       intervals.push(onsetData.times[i] - onsetData.times[i - 1])
     }
-
+    
     // Create autocorrelation function for tempo estimation
     const maxLag = Math.floor(intervals.length / 2)
     const autocorrelation: number[] = []
-
+    
     for (let lag = 1; lag <= maxLag; lag++) {
       let correlation = 0
       let count = 0
-
+      
       for (let i = 0; i < intervals.length - lag; i++) {
         correlation += intervals[i] * intervals[i + lag]
         count++
       }
-
+      
       if (count > 0) {
         autocorrelation.push(correlation / count)
       } else {
         autocorrelation.push(0)
       }
     }
-
+    
     // Find peaks in autocorrelation that correspond to valid BPM ranges
     for (let lag = 1; lag < autocorrelation.length; lag++) {
       const correlation = autocorrelation[lag]
-
+      
       // Calculate BPM from lag
       const avgInterval = intervals.reduce((sum, interval) => sum + interval, 0) / intervals.length
       const periodInSeconds = avgInterval * (lag + 1)
       const bpm = 60 / periodInSeconds
-
+      
       // Check if BPM is in valid range
       if (bpm >= this.minBPM && bpm <= this.maxBPM) {
         // Check if this is a local maximum
         const isLocalMax = (lag === 0 || correlation > autocorrelation[lag - 1]) &&
-          (lag === autocorrelation.length - 1 || correlation > autocorrelation[lag + 1])
-
+                          (lag === autocorrelation.length - 1 || correlation > autocorrelation[lag + 1])
+        
         if (isLocalMax && correlation > 0) {
           candidates.push({
             bpm,
@@ -310,11 +261,11 @@ export class BPMDetector {
         }
       }
     }
-
+    
     // Also try direct interval-to-BPM conversion
     const directCandidates = this.calculateDirectTempoCandidates(intervals)
     candidates.push(...directCandidates)
-
+    
     // Sort by confidence score
     return candidates.sort((a, b) => b.confidence - a.confidence)
   }
@@ -325,12 +276,12 @@ export class BPMDetector {
   private calculateDirectTempoCandidates(intervals: number[]): TempoCandidate[] {
     const candidates: TempoCandidate[] = []
     const bpmCounts = new Map<number, number>()
-
+    
     // Convert intervals to BPM and count occurrences
     for (const interval of intervals) {
       if (interval > 0) {
         const bpm = Math.round(60 / interval)
-
+        
         // Check multiples and subdivisions
         const bpmVariants = [
           bpm,
@@ -339,7 +290,7 @@ export class BPMDetector {
           Math.round(bpm * 1.5), // Dotted rhythm
           Math.round(bpm / 1.5)  // Inverse dotted
         ]
-
+        
         for (const variant of bpmVariants) {
           if (variant >= this.minBPM && variant <= this.maxBPM) {
             bpmCounts.set(variant, (bpmCounts.get(variant) || 0) + 1)
@@ -347,7 +298,7 @@ export class BPMDetector {
         }
       }
     }
-
+    
     // Convert counts to candidates
     const totalIntervals = intervals.length
     for (const [bpm, count] of bpmCounts.entries()) {
@@ -360,7 +311,7 @@ export class BPMDetector {
         })
       }
     }
-
+    
     return candidates
   }
 
@@ -371,7 +322,7 @@ export class BPMDetector {
     if (candidates.length === 0) {
       return { bpm: 120, confidence: 0.1, score: 0 }
     }
-
+    
     // Sort by confidence and score
     const sortedCandidates = candidates.sort((a, b) => {
       // Prefer higher confidence, but also consider score
@@ -381,7 +332,7 @@ export class BPMDetector {
       }
       return b.score - a.score
     })
-
+    
     // Apply preference for common hip-hop BPM ranges
     const hipHopRanges = [
       { min: 70, max: 90, weight: 1.2 },   // Slow hip-hop
@@ -389,7 +340,7 @@ export class BPMDetector {
       { min: 130, max: 150, weight: 1.3 }, // Uptempo hip-hop
       { min: 160, max: 180, weight: 1.1 }  // Fast hip-hop
     ]
-
+    
     for (const candidate of sortedCandidates) {
       for (const range of hipHopRanges) {
         if (candidate.bpm >= range.min && candidate.bpm <= range.max) {
@@ -398,10 +349,10 @@ export class BPMDetector {
         }
       }
     }
-
+    
     // Re-sort after applying weights
     sortedCandidates.sort((a, b) => b.confidence - a.confidence)
-
+    
     return sortedCandidates[0]
   }
 
@@ -410,7 +361,7 @@ export class BPMDetector {
    */
   private validateBPM(candidate: TempoCandidate): TempoCandidate {
     let { bpm, confidence } = candidate
-
+    
     // Clamp BPM to valid range
     if (bpm < this.minBPM) {
       bpm = this.minBPM
@@ -419,11 +370,11 @@ export class BPMDetector {
       bpm = this.maxBPM
       confidence *= 0.5
     }
-
+    
     // Check for common tempo relationships and adjust if needed
     const commonTempos = [60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200]
     const tolerance = 3
-
+    
     for (const commonTempo of commonTempos) {
       if (Math.abs(bpm - commonTempo) <= tolerance) {
         // Snap to common tempo and boost confidence slightly
@@ -432,10 +383,10 @@ export class BPMDetector {
         break
       }
     }
-
+    
     // Ensure confidence is within valid range
     confidence = Math.max(0, Math.min(1, confidence))
-
+    
     return { bpm, confidence, score: candidate.score }
   }
 

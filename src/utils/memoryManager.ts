@@ -174,15 +174,7 @@ export class MemoryManager {
    * Generate cache key for audio file
    */
   generateCacheKey(file: File): string {
-    if (!file) {
-      throw new Error('File is null or undefined')
-    }
-    
-    const name = file.name || 'unknown'
-    const size = file.size || 0
-    const lastModified = file.lastModified || 0
-    
-    return `${name}_${size}_${lastModified}`
+    return `${file.name}_${file.size}_${file.lastModified}`
   }
 
   /**
