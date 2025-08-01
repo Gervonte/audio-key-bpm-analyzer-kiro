@@ -110,10 +110,26 @@
   - Test performance on mobile browsers
   - _Requirements: 3.1_
 
-- [ ] 15. Add performance optimizations and memory management
-  - Implement Web Workers for audio analysis to prevent UI blocking
-  - Add proper cleanup of AudioBuffer objects after processing
+- [ ] 15. Replace custom algorithms with essentia.js implementation
+  - Install essentia.js dependency for accurate audio analysis
+  - Replace custom BPM detection with essentia.js tempo estimation algorithms
+  - Replace custom key detection with essentia.js key detection algorithms
+  - Update Web Workers to use essentia.js for processing
+  - Ensure accuracy meets requirements (±2 BPM tolerance for BPM detection)
+  - _Requirements: 1.3, 2.1, 2.2_
+
+- [ ] 16. Improve analysis accuracy and validation
+  - Validate BPM detection accuracy against known test samples
+  - Validate key detection accuracy against known test samples
+  - Fine-tune algorithm parameters for hip hop instrumental analysis
+  - Add confidence score calibration for more accurate reporting
+  - Implement fallback mechanisms for edge cases
+  - _Requirements: 2.1, 2.2, 2.3_
+
+- [ ] 17. Add advanced performance optimizations and memory management (Optional)
   - Implement caching for repeated analysis of same files
-  - Optimize waveform rendering for large audio files
+  - Add progressive loading for large audio files
+  - Optimize waveform rendering for large audio files with downsampling
   - Add memory usage monitoring and garbage collection triggers
+  - Implement file chunking for very large files
   - _Requirements: 4.2, 4.4_
