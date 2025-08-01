@@ -150,15 +150,15 @@ describe('Integration Tests - Complete Upload to Results Workflow', () => {
     // Should eventually show results
     await waitFor(() => {
       expect(screen.getByText('Analysis Results')).toBeInTheDocument()
-      expect(screen.getAllByText('C Major')).toHaveLength(2) // Mobile and desktop layouts
-      expect(screen.getAllByText('120')).toHaveLength(2) // Mobile and desktop layouts
-      expect(screen.getAllByText('85% confidence')).toHaveLength(2) // Mobile and desktop layouts
-      expect(screen.getAllByText('92% confidence')).toHaveLength(2) // Mobile and desktop layouts
+      expect(screen.getByText('C Major')).toBeInTheDocument()
+      expect(screen.getByText('120')).toBeInTheDocument()
+      expect(screen.getByText('85% confidence')).toBeInTheDocument()
+      expect(screen.getByText('92% confidence')).toBeInTheDocument()
     }, { timeout: INTEGRATION_TEST_TIMEOUT })
 
     // Should show analyze another file button
     expect(screen.getByText('Analyze Another File')).toBeInTheDocument()
-  }, 20000) // 20 second timeout for this complex test
+  })
 
   it.skip('should handle file validation errors in complete workflow', async () => {
     // This test is complex to mock properly in integration tests

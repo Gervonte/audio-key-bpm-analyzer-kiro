@@ -20,12 +20,7 @@ export const useWaveform = (): UseWaveformReturn => {
   // Initialize optimized renderer when canvas is available
   useEffect(() => {
     if (canvasRef.current && !rendererRef.current) {
-      try {
-        rendererRef.current = new OptimizedWaveformRenderer(canvasRef.current)
-      } catch (error) {
-        console.warn('Failed to initialize optimized waveform renderer:', error)
-        // Continue without optimized renderer
-      }
+      rendererRef.current = new OptimizedWaveformRenderer(canvasRef.current)
     }
     
     return () => {
@@ -103,32 +98,7 @@ export const useWaveform = (): UseWaveformReturn => {
 
     try {
       if (!rendererRef.current) {
-        // Fallback to basic implementation if optimized renderer not available
-        const channelData = audioBuffer.getChannelData(0)
-        const samples = channelData.length
-        const idealPeaks = Math.min(2000, targetWidth * 2)
-        const downsampleRatio = Math.max(1, Math.floor(samples / idealPeaks))
-        const actualPeaks = Math.floor(samples / downsampleRatio)
-        const peaks = new Float32Array(actualPeaks)
-
-        for (let i = 0; i < actualPeaks; i++) {
-          const start = i * downsampleRatio
-          const end = Math.min(start + downsampleRatio, samples)
-          let peak = 0
-          for (let j = start; j < end; j++) {
-            const abs = Math.abs(channelData[j])
-            if (abs > peak) peak = abs
-          }
-          peaks[i] = peak
-        }
-
-        return {
-          peaks,
-          duration: audioBuffer.duration,
-          sampleRate: audioBuffer.sampleRate,
-          channels: audioBuffer.numberOfChannels,
-          downsampleRatio
-        }
+        throw new Error('Optimized renderer not initialized')
       }
 
       // Check for cached optimized waveform data
@@ -161,13 +131,7 @@ export const useWaveform = (): UseWaveformReturn => {
     data: WaveformData,
     progress?: number
   ) => {
-    let ctx: CanvasRenderingContext2D | null = null
-    try {
-      ctx = canvas.getContext('2d')
-    } catch (error) {
-      console.warn('Canvas context not available:', error)
-      return
-    }
+    const ctx = canvas.getContext('2d')
     if (!ctx) return
 
     const { width, height } = canvas
