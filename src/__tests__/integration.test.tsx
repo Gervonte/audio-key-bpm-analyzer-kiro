@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+//import { fireEvent, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ChakraProvider, createSystem, defaultConfig } from '@chakra-ui/react'
 import { BrowserRouter } from 'react-router-dom'
@@ -132,15 +133,15 @@ const createValidAudioFile = () => {
   return new File(['fake audio content'], 'test.mp3', { type: 'audio/mpeg' })
 }
 
-const createUnsupportedFile = () => {
-  return new File(['fake content'], 'test.txt', { type: 'text/plain' })
-}
+// const createUnsupportedFile = () => {
+//   return new File(['fake content'], 'test.txt', { type: 'text/plain' })
+// }
 
-const createOversizedAudioFile = () => {
-  // Create a file that appears to be over 50MB
-  const largeContent = new Array(52 * 1024 * 1024).fill('a').join('')
-  return new File([largeContent], 'large.mp3', { type: 'audio/mpeg' })
-}
+// const createOversizedAudioFile = () => {
+//   // Create a file that appears to be over 50MB
+//   const largeContent = new Array(52 * 1024 * 1024).fill('a').join('')
+//   return new File([largeContent], 'large.mp3', { type: 'audio/mpeg' })
+// }
 
 const system = createSystem(defaultConfig)
 
