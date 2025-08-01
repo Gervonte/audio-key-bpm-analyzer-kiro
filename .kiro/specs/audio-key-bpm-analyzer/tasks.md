@@ -110,7 +110,7 @@
   - Test performance on mobile browsers
   - _Requirements: 3.1_
 
-- [x] 15. Add performance optimizations and memory management
+- [ ] 15. Add performance optimizations and memory management
   - Implement Web Workers for audio analysis to prevent UI blocking
   - Add proper cleanup of AudioBuffer objects after processing
   - Implement caching for repeated analysis of same files

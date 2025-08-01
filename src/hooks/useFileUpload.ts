@@ -10,7 +10,6 @@ import {
 } from '../utils/audioProcessing'
 import { SUPPORTED_FORMATS } from '../types'
 import type { AudioFile, ValidationResult } from '../types'
-import { memoryManager } from '../utils/memoryManager'
 
 interface UseFileUploadReturn {
   validateFile: (file: File) => ValidationResult
@@ -50,21 +49,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
 
     let audioContext: AudioContext | null = null
 
-    // Check memory before loading large files
-    if (memoryManager.isMemoryHigh()) {
-      console.warn('High memory usage detected before file loading, triggering cleanup')
-      memoryManager.forceGarbageCollection()
-    }
-
     try {
-      // Check for cached audio buffer
-      const cacheKey = memoryManager.generateCacheKey(file)
-      const cachedBuffer = memoryManager.getCachedResult<AudioBuffer>(cacheKey)
-      if (cachedBuffer) {
-        console.log('Using cached audio buffer')
-        return cachedBuffer
-      }
-
       // Validate file first
       const validation = validateFile(file)
       if (!validation.isValid) {
@@ -88,13 +73,6 @@ export const useFileUpload = (): UseFileUploadReturn => {
 
       if (!arrayBuffer || arrayBuffer.byteLength === 0) {
         throw new Error('File appears to be empty or corrupted')
-      }
-
-      // Check memory after loading array buffer
-      if (memoryManager.isMemoryHigh()) {
-        console.warn('High memory usage after loading file, may need to reduce cache')
-        // Clear some cache to make room
-        memoryManager.clearCache()
       }
 
       // Decode audio data with better error handling
@@ -132,10 +110,6 @@ export const useFileUpload = (): UseFileUploadReturn => {
 
       // Preprocess the audio buffer (normalization, filtering)
       const processedBuffer = preprocessAudioBuffer(audioBuffer)
-      
-      // Cache the processed buffer (estimate size based on audio data)
-      const estimatedSize = processedBuffer.length * processedBuffer.numberOfChannels * 4 // 4 bytes per float32
-      memoryManager.cacheResult(cacheKey, processedBuffer, estimatedSize)
       
       return processedBuffer
     } catch (err) {

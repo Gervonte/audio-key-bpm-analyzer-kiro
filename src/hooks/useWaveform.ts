@@ -1,53 +1,21 @@
-import { useCallback, useRef, useState, useEffect } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import type { WaveformData } from '../types'
-import { OptimizedWaveformRenderer, type OptimizedWaveformData } from '../utils/optimizedWaveform'
-import { memoryManager } from '../utils/memoryManager'
 
 interface UseWaveformReturn {
   generateWaveformData: (audioBuffer: AudioBuffer) => WaveformData
   drawWaveform: (canvas: HTMLCanvasElement, data: WaveformData, progress?: number) => void
   canvasRef: React.RefObject<HTMLCanvasElement | null>
   isGenerating: boolean
-  generateOptimizedWaveformData: (audioBuffer: AudioBuffer, targetWidth?: number) => OptimizedWaveformData
-  drawOptimizedWaveform: (canvas: HTMLCanvasElement, data: OptimizedWaveformData, progress?: number) => void
 }
 
 export const useWaveform = (): UseWaveformReturn => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const rendererRef = useRef<OptimizedWaveformRenderer | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
-
-  // Initialize optimized renderer when canvas is available
-  useEffect(() => {
-    if (canvasRef.current && !rendererRef.current) {
-      rendererRef.current = new OptimizedWaveformRenderer(canvasRef.current)
-    }
-    
-    return () => {
-      if (rendererRef.current) {
-        rendererRef.current.dispose()
-        rendererRef.current = null
-      }
-    }
-  }, [canvasRef.current])
 
   const generateWaveformData = useCallback((audioBuffer: AudioBuffer): WaveformData => {
     setIsGenerating(true)
 
     try {
-      // Check for cached waveform data
-      const cacheKey = `waveform_${memoryManager.generateCacheKey({
-        name: 'audio',
-        size: audioBuffer.length,
-        lastModified: Date.now()
-      } as File)}`
-      
-      const cached = memoryManager.getCachedResult<WaveformData>(cacheKey)
-      if (cached) {
-        console.log('Using cached waveform data')
-        return cached
-      }
-
       const channelData = audioBuffer.getChannelData(0) // Use first channel
       const samples = channelData.length
       const duration = audioBuffer.duration
@@ -76,51 +44,12 @@ export const useWaveform = (): UseWaveformReturn => {
         peaks.push(peak)
       }
 
-      const waveformData = {
+      return {
         peaks,
         duration,
         sampleRate,
         channels
       }
-
-      // Cache the result
-      const estimatedSize = peaks.length * 8 + 64 // Rough estimate
-      memoryManager.cacheResult(cacheKey, waveformData, estimatedSize)
-
-      return waveformData
-    } finally {
-      setIsGenerating(false)
-    }
-  }, [])
-
-  const generateOptimizedWaveformData = useCallback((audioBuffer: AudioBuffer, targetWidth: number = 1000): OptimizedWaveformData => {
-    setIsGenerating(true)
-
-    try {
-      if (!rendererRef.current) {
-        throw new Error('Optimized renderer not initialized')
-      }
-
-      // Check for cached optimized waveform data
-      const cacheKey = `optimized_waveform_${targetWidth}_${memoryManager.generateCacheKey({
-        name: 'audio',
-        size: audioBuffer.length,
-        lastModified: Date.now()
-      } as File)}`
-      
-      const cached = memoryManager.getCachedResult<OptimizedWaveformData>(cacheKey)
-      if (cached) {
-        console.log('Using cached optimized waveform data')
-        return cached
-      }
-
-      const optimizedData = rendererRef.current.generateOptimizedWaveformData(audioBuffer, targetWidth)
-
-      // Cache the result
-      const estimatedSize = optimizedData.peaks.length * 4 + 64 // Float32Array + metadata
-      memoryManager.cacheResult(cacheKey, optimizedData, estimatedSize)
-
-      return optimizedData
     } finally {
       setIsGenerating(false)
     }
@@ -420,35 +349,11 @@ export const useWaveform = (): UseWaveformReturn => {
     }
   }, [])
 
-  const drawOptimizedWaveform = useCallback((
-    canvas: HTMLCanvasElement,
-    data: OptimizedWaveformData,
-    progress?: number
-  ) => {
-    if (!rendererRef.current) {
-      console.warn('Optimized renderer not available, falling back to regular rendering')
-      return
-    }
-
-    const isMobile = window.innerWidth <= 768
-    
-    rendererRef.current.renderWaveform(data, {
-      width: canvas.width,
-      height: canvas.height,
-      color: '#FF0000',
-      progress,
-      maxPeaks: isMobile ? 1000 : 2000, // Reduce complexity on mobile
-      useWebGL: !isMobile // Disable WebGL on mobile for compatibility
-    })
-  }, [])
-
   return {
     generateWaveformData,
     drawWaveform,
     canvasRef,
-    isGenerating,
-    generateOptimizedWaveformData,
-    drawOptimizedWaveform
+    isGenerating
   }
 }
 

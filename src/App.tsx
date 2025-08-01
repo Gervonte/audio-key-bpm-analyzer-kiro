@@ -19,8 +19,6 @@ import { ErrorDisplay } from './components/ErrorDisplay'
 import { useFileUpload } from './hooks/useFileUpload'
 import { useAudioProcessor } from './hooks/useAudioProcessor'
 import { useAudioProcessingRetry } from './hooks/useRetry'
-import { AudioProcessor } from './utils/audioProcessor'
-import { memoryManager } from './utils/memoryManager'
 import type { AppState } from './types'
 
 // Processing stages for better state management
@@ -213,9 +211,6 @@ function App() {
   useEffect(() => {
     return () => {
       cleanupAudioResources()
-      // Clean up worker pools and memory manager
-      AudioProcessor.cleanup()
-      memoryManager.stopMemoryMonitoring()
     }
   }, [cleanupAudioResources])
 
