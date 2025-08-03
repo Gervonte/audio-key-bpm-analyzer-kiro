@@ -19,6 +19,9 @@ export interface BPMWorkerResponse {
   error?: string
 }
 
+// Global BPM detector instance for reuse
+let bpmDetector: BPMDetector | null = null
+
 // Worker message handler
 self.onmessage = async (event: MessageEvent<BPMWorkerMessage>) => {
   const { type, audioBufferData } = event.data
@@ -38,9 +41,12 @@ self.onmessage = async (event: MessageEvent<BPMWorkerMessage>) => {
         channelData.set(audioBufferData.channelData[channel])
       }
 
-      // Perform BPM detection
-      const detector = new BPMDetector()
-      const result = await detector.detectBPM(audioBuffer)
+      // Create or reuse BPM detector
+      if (!bpmDetector) {
+        bpmDetector = new BPMDetector()
+      }
+      
+      const result = await bpmDetector.detectBPM(audioBuffer)
 
       // Send result back to main thread
       const response: BPMWorkerResponse = {
@@ -60,6 +66,14 @@ self.onmessage = async (event: MessageEvent<BPMWorkerMessage>) => {
     }
   }
 }
+
+// Cleanup on worker termination
+self.addEventListener('beforeunload', () => {
+  if (bpmDetector) {
+    bpmDetector.destroy()
+    bpmDetector = null
+  }
+})
 
 // Export empty object to make this a module
 export {}

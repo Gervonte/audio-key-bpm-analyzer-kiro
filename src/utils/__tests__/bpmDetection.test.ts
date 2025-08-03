@@ -200,19 +200,7 @@ describe('BPMDetector', () => {
     })
   })
 
-  describe('setAnalysisParameters', () => {
-    it('should allow setting custom analysis parameters', () => {
-      detector.setAnalysisParameters(1024, 256)
-      
-      expect(() => detector.setAnalysisParameters(1024, 256)).not.toThrow()
-    })
-
-    it('should handle minimum parameter values', () => {
-      detector.setAnalysisParameters(100, 50) // Below minimums
-      
-      expect(() => detector.setAnalysisParameters(100, 50)).not.toThrow()
-    })
-  })
+  // Note: setAnalysisParameters is no longer available as essentia.js handles parameters internally
 })
 
 describe('Factory functions', () => {

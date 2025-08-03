@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { KeyDetector } from '../keyDetection'
-import type { ChromaVector } from '../keyDetection'
 
 // Set longer timeout for audio processing tests
 const AUDIO_TEST_TIMEOUT = 10000
@@ -58,99 +57,8 @@ describe('KeyDetector', () => {
     })
   })
 
-  describe('extractChromaFeatures', () => {
-    it('should extract chroma features from mono audio', () => {
-      // Create a simple test with shorter audio
-      const sampleRate = 44100
-      const duration = 0.1 // 0.1 second for faster testing
-      const frequency = 440 // A4
-      const length = sampleRate * duration
-      const audioData = new Float32Array(length)
-
-      for (let i = 0; i < length; i++) {
-        audioData[i] = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 0.5
-      }
-
-      const audioBuffer = new MockAudioBuffer(sampleRate, length, 1, [audioData])
-      const chromaVector = keyDetector.extractChromaFeatures(audioBuffer)
-
-      expect(chromaVector.values).toHaveLength(12)
-      expect(chromaVector.confidence).toBeGreaterThanOrEqual(0)
-      expect(chromaVector.confidence).toBeLessThanOrEqual(1)
-
-      // Check that some chroma values are non-zero
-      const hasNonZeroValues = chromaVector.values.some(val => val > 0)
-      expect(hasNonZeroValues).toBe(true)
-    }, AUDIO_TEST_TIMEOUT)
-
-    it('should handle stereo audio by converting to mono', () => {
-      const sampleRate = 44100
-      const length = 4410 // Shorter for faster testing
-      const leftChannel = new Float32Array(length).fill(0.5)
-      const rightChannel = new Float32Array(length).fill(0.3)
-
-      const audioBuffer = new MockAudioBuffer(sampleRate, length, 2, [leftChannel, rightChannel])
-      const chromaVector = keyDetector.extractChromaFeatures(audioBuffer)
-
-      expect(chromaVector.values).toHaveLength(12)
-      expect(chromaVector.confidence).toBeGreaterThanOrEqual(0)
-    }, AUDIO_TEST_TIMEOUT)
-
-    it('should handle empty audio gracefully', () => {
-      const audioBuffer = new MockAudioBuffer(44100, 1024, 1, [new Float32Array(1024)])
-      const chromaVector = keyDetector.extractChromaFeatures(audioBuffer)
-
-      expect(chromaVector.values).toHaveLength(12)
-      expect(chromaVector.values.every(val => val >= 0)).toBe(true)
-    })
-  })
-
-  describe('calculateKeyProfile', () => {
-    it('should identify C Major from C major triad chroma', () => {
-      // Create a chroma vector representing C major triad (C, E, G)
-      const chromaVector: ChromaVector = {
-        values: [1.0, 0, 0, 0, 0.8, 0, 0, 0.6, 0, 0, 0, 0], // C=1.0, E=0.8, G=0.6
-        confidence: 0.9
-      }
-
-      const keyProfile = keyDetector.calculateKeyProfile(chromaVector)
-
-      expect(keyProfile.key).toBe('C Major')
-      expect(keyProfile.mode).toBe('major')
-      expect(keyProfile.correlation).toBeGreaterThan(0)
-    })
-
-    it('should identify A Minor from A minor triad chroma', () => {
-      // Create a chroma vector representing A minor triad (A, C, E)
-      // A=9, C=0, E=4 in chromatic scale
-      const chromaVector: ChromaVector = {
-        values: [0.8, 0, 0, 0, 0.6, 0, 0, 0, 0, 1.0, 0, 0], // A=1.0, C=0.8, E=0.6
-        confidence: 0.9
-      }
-
-      const keyProfile = keyDetector.calculateKeyProfile(chromaVector)
-
-      // The algorithm might detect different keys based on the correlation
-      // Let's just check that it detects a minor key with reasonable correlation
-      expect(keyProfile.mode).toBe('minor')
-      expect(keyProfile.correlation).toBeGreaterThan(0)
-      expect(keyProfile.key).toContain('Minor')
-    })
-
-    it('should handle flat chroma vector', () => {
-      const chromaVector: ChromaVector = {
-        values: new Array(12).fill(0.083), // Equal distribution
-        confidence: 0.5
-      }
-
-      const keyProfile = keyDetector.calculateKeyProfile(chromaVector)
-
-      expect(keyProfile.key).toBeDefined()
-      expect(['major', 'minor']).toContain(keyProfile.mode)
-      expect(keyProfile.correlation).toBeGreaterThanOrEqual(-1)
-      expect(keyProfile.correlation).toBeLessThanOrEqual(1)
-    })
-  })
+  // Note: extractChromaFeatures and calculateKeyProfile are now internal to essentia.js
+  // We test the overall detectKey functionality instead
 
   describe('detectKey', () => {
     it('should detect key from audio buffer', async () => {
@@ -177,18 +85,15 @@ describe('KeyDetector', () => {
     }, AUDIO_TEST_TIMEOUT)
 
     it('should handle detection errors gracefully', async () => {
-      // Mock the extractChromaFeatures method to throw an error
-      const originalMethod = keyDetector.extractChromaFeatures
-      keyDetector.extractChromaFeatures = () => {
-        throw new Error('Simulated processing error')
-      }
+      // Test with invalid audio buffer (essentia.js should handle gracefully)
+      const audioBuffer = new MockAudioBuffer(44100, 0, 1, [new Float32Array(0)])
 
-      const audioBuffer = new MockAudioBuffer(44100, 1024, 1, [new Float32Array(1024)])
-
-      await expect(keyDetector.detectKey(audioBuffer)).rejects.toThrow('Failed to detect key from audio')
-
-      // Restore the original method
-      keyDetector.extractChromaFeatures = originalMethod
+      const result = await keyDetector.detectKey(audioBuffer)
+      
+      // Should return a result even for problematic input
+      expect(result).toBeDefined()
+      expect(result.keyName).toBeDefined()
+      expect(result.confidence).toBeGreaterThanOrEqual(0)
     })
 
     it('should return consistent results for the same input', async () => {

@@ -18,6 +18,9 @@ interface KeyWorkerResponse {
   error?: string
 }
 
+// Global key detector instance for reuse
+let keyDetector: KeyDetector | null = null
+
 // Handle messages from main thread
 self.onmessage = async (event: MessageEvent<KeyWorkerMessage>) => {
   const { type, audioData } = event.data
@@ -32,8 +35,11 @@ self.onmessage = async (event: MessageEvent<KeyWorkerMessage>) => {
         getChannelData: (channel: number) => audioData.channelData[channel]
       } as AudioBuffer
 
-      // Create key detector and analyze
-      const keyDetector = new KeyDetector(audioData.sampleRate)
+      // Create or reuse key detector
+      if (!keyDetector) {
+        keyDetector = new KeyDetector(audioData.sampleRate)
+      }
+      
       const result = await keyDetector.detectKey(audioBuffer)
 
       // Send result back to main thread
@@ -54,6 +60,14 @@ self.onmessage = async (event: MessageEvent<KeyWorkerMessage>) => {
     }
   }
 }
+
+// Cleanup on worker termination
+self.addEventListener('beforeunload', () => {
+  if (keyDetector) {
+    keyDetector.destroy()
+    keyDetector = null
+  }
+})
 
 // Export empty object to make this a module
 export {}
