@@ -21,7 +21,7 @@ export async function detectBPMFallback(audioBuffer: AudioBuffer, onProgress?: (
     const monoBuffer = convertToMono(audioBuffer)
     onProgress?.(30)
     
-    // Extract onset times using spectral flux
+    // Extract onset times using spectral flux (with limits to prevent hanging)
     const onsetData = extractOnsets(monoBuffer)
     onProgress?.(60)
     
@@ -99,7 +99,7 @@ function extractOnsets(audioBuffer: AudioBuffer): OnsetData {
   // Calculate spectral flux for onset detection
   const windowSize = 2048
   const hopSize = 512
-  const numFrames = Math.floor((audioData.length - windowSize) / hopSize)
+  const numFrames = Math.min(1000, Math.floor((audioData.length - windowSize) / hopSize)) // Limit to prevent hanging
   
   let previousSpectrum: number[] = []
   

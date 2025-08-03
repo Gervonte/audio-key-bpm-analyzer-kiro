@@ -31,7 +31,7 @@ export async function detectKeyFallback(audioBuffer: AudioBuffer, onProgress?: (
   try {
     onProgress?.(10)
     
-    // Extract chroma features from the audio
+    // Extract chroma features from the audio (with limits to prevent hanging)
     const chromaVector = extractChromaFeatures(audioBuffer)
     onProgress?.(60)
     
@@ -69,40 +69,36 @@ function extractChromaFeatures(audioBuffer: AudioBuffer): ChromaVector {
   const chromaValues = new Array(12).fill(0)
   const sampleRate = audioBuffer.sampleRate
   
-  // Use a more comprehensive analysis for better accuracy
-  const analysisLength = Math.min(audioData.length, sampleRate * 60) // Max 60 seconds
-  const stepSize = Math.max(1, Math.floor(analysisLength / 4000)) // Sample every ~15ms with more points
+  // Use a more comprehensive analysis for better accuracy (with limits)
+  const analysisLength = Math.min(audioData.length, sampleRate * 30) // Max 30 seconds to prevent hanging
+  const stepSize = Math.max(1, Math.floor(analysisLength / 2000)) // Reduce sample points to prevent hanging
   
   let totalEnergy = 0
   let sampleCount = 0
 
-  // Multi-resolution frequency analysis for better chroma extraction
+  // Simplified frequency analysis to prevent hanging
   for (let i = 0; i < analysisLength - stepSize; i += stepSize) {
     const sample = audioData[i]
     if (Math.abs(sample) > 0.001) { // Only process non-silent samples
       
-      // Use multiple window sizes for better frequency resolution
-      const windowSizes = [1024, 2048, 4096]
+      // Use single window size to prevent hanging
+      const windowSize = 2048
       
-      for (const windowSize of windowSizes) {
-        if (i + windowSize < audioData.length) {
-          const localEnergy = getLocalEnergy(audioData, i, windowSize)
+      if (i + windowSize < audioData.length) {
+        const localEnergy = getLocalEnergy(audioData, i, windowSize)
+        
+        if (localEnergy > 0.005) { // Higher threshold to reduce processing
+          const estimatedPitch = estimatePitch(audioData, i, windowSize, sampleRate)
           
-          if (localEnergy > 0.003) { // Adaptive threshold
-            const estimatedPitch = estimatePitch(audioData, i, windowSize, sampleRate)
-            
-            if (estimatedPitch > 60 && estimatedPitch < 4000) { // Extended musical range
-              const chromaClass = frequencyToChroma(estimatedPitch)
-              if (chromaClass >= 0 && chromaClass < 12) {
-                // Weight by energy, window size, and pitch confidence
-                const windowWeight = windowSize / 4096 // Prefer larger windows
-                const energyWeight = Math.min(1.0, localEnergy * 20)
-                const pitchWeight = windowWeight * energyWeight
-                
-                chromaValues[chromaClass] += pitchWeight
-                totalEnergy += pitchWeight
-                sampleCount++
-              }
+          if (estimatedPitch > 80 && estimatedPitch < 2000) { // Musical range
+            const chromaClass = frequencyToChroma(estimatedPitch)
+            if (chromaClass >= 0 && chromaClass < 12) {
+              // Simple weighting
+              const pitchWeight = Math.min(1.0, localEnergy * 10)
+              
+              chromaValues[chromaClass] += pitchWeight
+              totalEnergy += pitchWeight
+              sampleCount++
             }
           }
         }
