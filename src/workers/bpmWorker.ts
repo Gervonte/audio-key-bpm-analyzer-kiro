@@ -38,12 +38,9 @@ self.onmessage = async (event: MessageEvent<BPMWorkerMessage>) => {
         channelData.set(audioBufferData.channelData[channel])
       }
 
-      // Perform BPM detection using essentia.js
+      // Perform BPM detection
       const detector = new BPMDetector()
       const result = await detector.detectBPM(audioBuffer)
-      
-      // Cleanup detector
-      detector.cleanup()
 
       // Send result back to main thread
       const response: BPMWorkerResponse = {

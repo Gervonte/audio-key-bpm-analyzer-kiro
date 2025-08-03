@@ -32,12 +32,9 @@ self.onmessage = async (event: MessageEvent<KeyWorkerMessage>) => {
         getChannelData: (channel: number) => audioData.channelData[channel]
       } as AudioBuffer
 
-      // Create key detector and analyze using essentia.js
-      const keyDetector = new KeyDetector()
+      // Create key detector and analyze
+      const keyDetector = new KeyDetector(audioData.sampleRate)
       const result = await keyDetector.detectKey(audioBuffer)
-      
-      // Cleanup detector
-      keyDetector.cleanup()
 
       // Send result back to main thread
       const response: KeyWorkerResponse = {

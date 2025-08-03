@@ -110,7 +110,7 @@
   - Test performance on mobile browsers
   - _Requirements: 3.1_
 
-- [x] 15. Replace custom algorithms with essentia.js implementation
+- [ ] 15. Replace custom algorithms with essentia.js implementation
   - Install essentia.js dependency for accurate audio analysis
   - Replace custom BPM detection with essentia.js tempo estimation algorithms
   - Replace custom key detection with essentia.js key detection algorithms
