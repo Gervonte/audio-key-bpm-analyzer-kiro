@@ -123,8 +123,9 @@ function extractOnsets(audioBuffer: AudioBuffer): OnsetData {
         }
       }
       
-      // Peak picking for onset detection
-      if (flux > 0) {
+      // Improved peak picking for onset detection with adaptive threshold
+      const adaptiveThreshold = Math.max(0.1, previousSpectrum.reduce((sum, val) => sum + val, 0) / previousSpectrum.length * 0.5)
+      if (flux > adaptiveThreshold) {
         const timeInSeconds = startSample / sampleRate
         onsetTimes.push(timeInSeconds)
         onsetStrengths.push(flux)
@@ -155,20 +156,25 @@ function applyHanningWindow(frame: Float32Array): Float32Array {
  */
 function calculateMagnitudeSpectrum(frame: Float32Array): number[] {
   const spectrum: number[] = []
-  const numBins = Math.floor(frame.length / 2)
+  const frameSize = frame.length
+  const numBins = Math.floor(frameSize / 2)
   
-  // Simplified magnitude calculation using overlapping windows
-  for (let bin = 0; bin < numBins; bin++) {
-    let magnitude = 0
-    const binSize = Math.floor(frame.length / numBins)
-    const start = bin * binSize
-    const end = Math.min(start + binSize, frame.length)
+  // Use a more accurate frequency domain analysis
+  for (let k = 0; k < numBins; k++) {
+    let real = 0
+    let imag = 0
     
-    for (let i = start; i < end; i++) {
-      magnitude += Math.abs(frame[i])
+    // Simple DFT calculation for key frequency bins
+    const step = Math.max(1, Math.floor(frameSize / 512)) // Subsample for performance
+    for (let n = 0; n < frameSize; n += step) {
+      const angle = -2 * Math.PI * k * n / frameSize
+      real += frame[n] * Math.cos(angle)
+      imag += frame[n] * Math.sin(angle)
     }
     
-    spectrum.push(magnitude / binSize)
+    // Calculate magnitude
+    const magnitude = Math.sqrt(real * real + imag * imag)
+    spectrum.push(magnitude)
   }
   
   return spectrum
@@ -339,16 +345,18 @@ function selectBestTempo(candidates: TempoCandidate[]): TempoCandidate {
     return b.score - a.score
   })
   
-  // Apply preference for common hip-hop BPM ranges
-  const hipHopRanges = [
-    { min: 70, max: 90, weight: 1.2 },   // Slow hip-hop
-    { min: 90, max: 110, weight: 1.5 },  // Classic hip-hop
-    { min: 130, max: 150, weight: 1.3 }, // Uptempo hip-hop
-    { min: 160, max: 180, weight: 1.1 }  // Fast hip-hop
+  // Apply preference for common music BPM ranges (expanded for better accuracy)
+  const musicRanges = [
+    { min: 60, max: 80, weight: 1.1 },   // Slow ballads
+    { min: 80, max: 100, weight: 1.3 },  // Mid-tempo
+    { min: 100, max: 120, weight: 1.4 }, // Common pop/rock
+    { min: 120, max: 140, weight: 1.5 }, // Dance/electronic
+    { min: 140, max: 170, weight: 1.4 }, // Fast dance/hip-hop (includes 166)
+    { min: 170, max: 200, weight: 1.2 }  // Very fast
   ]
   
   for (const candidate of sortedCandidates) {
-    for (const range of hipHopRanges) {
+    for (const range of musicRanges) {
       if (candidate.bpm >= range.min && candidate.bpm <= range.max) {
         candidate.confidence *= range.weight
         candidate.score *= range.weight
