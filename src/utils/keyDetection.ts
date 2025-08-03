@@ -1,5 +1,6 @@
 import type { KeyResult } from '../types'
 import { essentiaManager } from './essentiaManager'
+import { detectKeyFallback } from './fallbackKeyDetection'
 
 export interface KeyDetectionOptions {
   onProgress?: (progress: number) => void
@@ -38,13 +39,9 @@ export class KeyDetector {
       return parsedResult
     } catch (error) {
       console.error('Key detection failed:', error)
-      // Return a fallback result instead of throwing
-      return {
-        keyName: 'C Major',
-        keySignature: 'C',
-        confidence: 0.0,
-        mode: 'major' as const
-      }
+      // Use fallback custom algorithm
+      console.log('Using fallback key detection algorithm')
+      return detectKeyFallback(audioBuffer, onProgress)
     }
   }
 

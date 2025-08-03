@@ -42,8 +42,8 @@ class EssentiaManager {
     return new Promise((resolve, reject) => {
       // Set a timeout for initialization
       const timeout = setTimeout(() => {
-        reject(new Error('Essentia.js initialization timed out after 15 seconds'))
-      }, 15000)
+        reject(new Error('Essentia.js initialization timed out after 5 seconds'))
+      }, 5000)
 
       try {
         if (EssentiaWASM.calledRun) {

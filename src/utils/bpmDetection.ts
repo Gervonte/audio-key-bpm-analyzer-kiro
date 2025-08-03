@@ -3,6 +3,7 @@
 import type { BPMResult } from '../types'
 import { BPM_RANGE } from '../types'
 import { essentiaManager } from './essentiaManager'
+import { detectBPMFallback } from './fallbackBpmDetection'
 
 export interface BPMDetectionOptions {
   onProgress?: (progress: number) => void
@@ -75,15 +76,9 @@ export class BPMDetector {
         return this.parseEssentiaBeatResult(beatResult, essentia, true)
       } catch (fallbackError) {
         console.error('Fallback BPM detection also failed:', fallbackError)
-        // Final fallback - return a reasonable default based on audio length
-        const durationInSeconds = audioBuffer.length / audioBuffer.sampleRate
-        const estimatedBPM = durationInSeconds > 0 ? Math.min(Math.max(60 / (durationInSeconds / 10), this.minBPM), this.maxBPM) : 120
-        
-        return {
-          bpm: Math.round(estimatedBPM),
-          confidence: 0.1,
-          detectedBeats: 0
-        }
+        // Use custom fallback algorithm
+        console.log('Using fallback BPM detection algorithm')
+        return detectBPMFallback(audioBuffer, onProgress)
       }
     }
   }
