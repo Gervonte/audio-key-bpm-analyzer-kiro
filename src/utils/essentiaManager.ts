@@ -7,7 +7,7 @@ class EssentiaManager {
   private initializationPromise: Promise<void> | null = null
   private isInitialized = false
 
-  private constructor() {}
+  private constructor() { }
 
   static getInstance(): EssentiaManager {
     if (!EssentiaManager.instance) {
@@ -46,33 +46,51 @@ class EssentiaManager {
       }, 5000)
 
       try {
-        if (EssentiaWASM.calledRun) {
-          // WASM is already loaded
+        console.log('Attempting essentia.js initialization...')
+        
+        // Use the working method: nested EssentiaWASM.EssentiaWASM with Essentia constructor
+        const wasmAny = EssentiaWASM as any
+        if (wasmAny.EssentiaWASM && typeof Essentia !== 'undefined') {
+          console.log('Using nested EssentiaWASM.EssentiaWASM with Essentia constructor')
           clearTimeout(timeout)
-          this.essentia = new Essentia(EssentiaWASM)
+          this.essentia = new (Essentia as any)(wasmAny.EssentiaWASM, false)
           this.isInitialized = true
+          console.log('Essentia instance created successfully!')
           resolve()
-        } else {
-          // Wait for WASM to load
+          return
+        }
+
+        // Fallback: Wait for runtime initialization if not ready
+        if (!EssentiaWASM.calledRun) {
+          console.log('Waiting for WASM runtime initialization...')
           const originalCallback = EssentiaWASM.onRuntimeInitialized
           EssentiaWASM.onRuntimeInitialized = () => {
             try {
+              console.log('Runtime initialized, creating Essentia instance...')
+              this.essentia = new (Essentia as any)((EssentiaWASM as any).EssentiaWASM, false)
               clearTimeout(timeout)
-              this.essentia = new Essentia(EssentiaWASM)
               this.isInitialized = true
+              console.log('Essentia instance created successfully after runtime init!')
               resolve()
+
               // Restore original callback if it existed
-              if (originalCallback) {
+              if (originalCallback && typeof originalCallback === 'function') {
                 originalCallback()
               }
             } catch (error) {
               clearTimeout(timeout)
+              console.error('Error during runtime initialization:', error)
               reject(error)
             }
           }
+        } else {
+          clearTimeout(timeout)
+          reject(new Error('EssentiaWASM.EssentiaWASM not available and runtime already initialized'))
         }
+
       } catch (error) {
         clearTimeout(timeout)
+        console.error('Error during essentia.js initialization:', error)
         reject(error)
       }
     })
@@ -82,7 +100,7 @@ class EssentiaManager {
     if (this.essentia) {
       try {
         this.essentia.shutdown()
-        ;(this.essentia as any).delete()
+          ; (this.essentia as any).delete()
       } catch (error) {
         console.warn('Error cleaning up essentia instance:', error)
       }
