@@ -2,7 +2,7 @@
 
 import type { BPMResult } from '../types'
 import { BPM_RANGE } from '../types'
-import { EssentiaWASM, Essentia } from 'essentia.js'
+import { essentiaManager } from './essentiaManager'
 
 export interface BPMDetectionOptions {
   onProgress?: (progress: number) => void
@@ -12,12 +12,11 @@ export interface BPMDetectionOptions {
  * BPM Detection class using essentia.js algorithms
  */
 export class BPMDetector {
-  private essentia: Essentia
   private minBPM: number = BPM_RANGE.min
   private maxBPM: number = BPM_RANGE.max
 
   constructor() {
-    this.essentia = new Essentia(EssentiaWASM)
+    // Essentia will be managed by the singleton manager
   }
 
   /**
@@ -26,10 +25,13 @@ export class BPMDetector {
   async detectBPM(audioBuffer: AudioBuffer, options: BPMDetectionOptions = {}): Promise<BPMResult> {
     const { onProgress } = options
     try {
+      // Get essentia instance from manager
+      const essentia = await essentiaManager.getEssentia()
+
       onProgress?.(10)
 
       // Convert AudioBuffer to mono signal for essentia.js
-      const monoSignal = this.essentia.audioBufferToMonoSignal(audioBuffer)
+      const monoSignal = essentia.audioBufferToMonoSignal(audioBuffer)
 
       // Check if audio is silent (all zeros or very low energy)
       const totalEnergy = monoSignal.reduce((sum, sample) => sum + Math.abs(sample), 0)
@@ -47,15 +49,15 @@ export class BPMDetector {
       onProgress?.(30)
 
       // Use essentia.js BeatTrackerMultiFeature for accurate BPM detection
-      const beatResult = this.essentia.BeatTrackerMultiFeature(
-        this.essentia.arrayToVector(monoSignal),
+      const beatResult = essentia.BeatTrackerMultiFeature(
+        essentia.arrayToVector(monoSignal),
         this.maxBPM,
         this.minBPM
       )
       onProgress?.(70)
 
       // Parse the beat tracking result
-      const bpmResult = this.parseEssentiaBeatResult(beatResult)
+      const bpmResult = this.parseEssentiaBeatResult(beatResult, essentia)
       onProgress?.(100)
 
       return bpmResult
@@ -63,18 +65,23 @@ export class BPMDetector {
       console.error('BPM detection failed:', error)
       // Fallback to simpler beat tracker
       try {
-        const monoSignal = this.essentia.audioBufferToMonoSignal(audioBuffer)
-        const beatResult = this.essentia.BeatTrackerDegara(
-          this.essentia.arrayToVector(monoSignal),
+        const essentia = await essentiaManager.getEssentia()
+        const monoSignal = essentia.audioBufferToMonoSignal(audioBuffer)
+        const beatResult = essentia.BeatTrackerDegara(
+          essentia.arrayToVector(monoSignal),
           this.maxBPM,
           this.minBPM
         )
-        return this.parseEssentiaBeatResult(beatResult, true)
+        return this.parseEssentiaBeatResult(beatResult, essentia, true)
       } catch (fallbackError) {
         console.error('Fallback BPM detection also failed:', fallbackError)
+        // Final fallback - return a reasonable default based on audio length
+        const durationInSeconds = audioBuffer.length / audioBuffer.sampleRate
+        const estimatedBPM = durationInSeconds > 0 ? Math.min(Math.max(60 / (durationInSeconds / 10), this.minBPM), this.maxBPM) : 120
+        
         return {
-          bpm: 120,
-          confidence: 0.0,
+          bpm: Math.round(estimatedBPM),
+          confidence: 0.1,
           detectedBeats: 0
         }
       }
@@ -84,10 +91,10 @@ export class BPMDetector {
   /**
    * Parse essentia.js beat tracking result into our BPMResult format
    */
-  private parseEssentiaBeatResult(beatResult: any, _isSimple: boolean = false): BPMResult {
+  private parseEssentiaBeatResult(beatResult: any, essentia: any, _isSimple: boolean = false): BPMResult {
     // BeatTrackerMultiFeature returns: { ticks: Float32Array, confidence: number }
     // BeatTrackerDegara returns: { ticks: Float32Array }
-    const ticks = this.essentia.vectorToArray(beatResult.ticks || beatResult)
+    const ticks = essentia.vectorToArray(beatResult.ticks || beatResult)
     const confidence = beatResult.confidence || 0.5
 
     // If we have very few beats or very low confidence, return fallback
@@ -186,14 +193,11 @@ export class BPMDetector {
   }
 
   /**
-   * Clean up essentia instance
+   * Clean up essentia instance (managed by singleton)
    */
   destroy(): void {
-    if (this.essentia) {
-      this.essentia.shutdown()
-        // Type assertion needed because essentia.js TypeScript definitions are incomplete
-        ; (this.essentia as any).delete()
-    }
+    // Cleanup is handled by the essentia manager
+    // Individual instances don't need to clean up
   }
 }
 

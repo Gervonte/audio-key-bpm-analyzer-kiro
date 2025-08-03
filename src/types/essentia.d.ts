@@ -2,6 +2,9 @@
 declare module 'essentia.js' {
   export interface EssentiaWASM {
     // WebAssembly module interface
+    calledRun?: boolean
+    onRuntimeInitialized?: () => void
+    EssentiaJS?: any
   }
 
   export class Essentia {

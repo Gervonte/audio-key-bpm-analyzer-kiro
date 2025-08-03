@@ -57,7 +57,9 @@ export function useRetry<T>(
       
       if (currentAttempt > 0) {
         setIsRetrying(true)
-        onRetryAttempt?.(currentAttempt, lastError!)
+        if (onRetryAttempt && lastError) {
+          onRetryAttempt(currentAttempt, lastError)
+        }
       }
 
       const result = await asyncFunction(...args)
@@ -132,7 +134,7 @@ export function useAudioProcessingRetry<T>(
     baseDelay: 1500,
     backoffMultiplier: 2,
     onRetryAttempt: (attempt, error) => {
-      console.log(`Audio processing retry attempt ${attempt}:`, error.message)
+      console.log(`Audio processing retry attempt ${attempt}:`, error?.message || 'Unknown error')
     }
   })
 }
@@ -146,7 +148,7 @@ export function useFileOperationRetry<T>(
     baseDelay: 1000,
     backoffMultiplier: 1.5,
     onRetryAttempt: (attempt, error) => {
-      console.log(`File operation retry attempt ${attempt}:`, error.message)
+      console.log(`File operation retry attempt ${attempt}:`, error?.message || 'Unknown error')
     }
   })
 }
