@@ -114,18 +114,10 @@
   - Install essentia.js dependency for accurate audio analysis
   - Replace custom BPM detection with essentia.js tempo estimation algorithms
   - Replace custom key detection with essentia.js key detection algorithms
-  - Update Web Workers to use essentia.js for processing
   - Ensure accuracy meets requirements (±2 BPM tolerance for BPM detection)
   - _Requirements: 1.3, 2.1, 2.2_
 
-- [ ] 16. Integrate Web Workers for non-blocking audio processing
-  - Update AudioProcessor to use Web Workers for key and BPM detection
-  - Implement proper data transfer between main thread and workers
-  - Add progress reporting from workers to main thread
-  - Test worker performance and error handling
-  - _Requirements: 4.2, 4.4_
-
-- [ ] 17. Improve analysis accuracy and validation
+- [ ] 16. Improve analysis accuracy and validation
   - Validate BPM detection accuracy against known test samples
   - Validate key detection accuracy against known test samples
   - Fine-tune algorithm parameters for hip hop instrumental analysis
@@ -133,7 +125,7 @@
   - Implement fallback mechanisms for edge cases
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 18. Add advanced performance optimizations and memory management (Optional)
+- [ ] 17. Add advanced performance optimizations and memory management (Optional)
   - Implement caching for repeated analysis of same files
   - Add progressive loading for large audio files
   - Optimize waveform rendering for large audio files with downsampling
