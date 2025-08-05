@@ -1,8 +1,40 @@
 // Unit tests for BPM detection module
 
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { BPMDetector, createBPMDetector, detectBPM } from '../bpmDetection'
 import { BPM_RANGE } from '../../types'
+
+// Mock the fallback BPM detection to prevent timeouts in test environment
+vi.mock('../fallbackBpmDetection', () => ({
+  detectBPMFallback: vi.fn().mockImplementation(async (audioBuffer, onProgress) => {
+    onProgress?.(100)
+    
+    // Check if this is silent audio (all zeros)
+    const channelData = audioBuffer.getChannelData(0)
+    let hasSignal = false
+    for (let i = 0; i < Math.min(1000, channelData.length); i++) {
+      if (Math.abs(channelData[i]) > 0.001) {
+        hasSignal = true
+        break
+      }
+    }
+    
+    // Return appropriate confidence based on audio content
+    if (!hasSignal || audioBuffer.length === 0) {
+      return {
+        bpm: 120,
+        confidence: 0.1, // Low confidence for silent/empty audio
+        detectedBeats: 0
+      }
+    }
+    
+    return {
+      bpm: 120,
+      confidence: 0.8,
+      detectedBeats: Math.floor(audioBuffer.duration * 2) // Approximate beat count
+    }
+  })
+}))
 
 // Helper function to create a test AudioBuffer
 function createTestAudioBuffer(

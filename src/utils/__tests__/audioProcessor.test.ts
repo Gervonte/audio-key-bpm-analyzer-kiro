@@ -30,6 +30,24 @@ vi.mock('../bpmDetection', () => ({
   BPMDetector: vi.fn().mockImplementation(() => mockBPMDetector)
 }))
 
+// Mock the fallback algorithms to prevent timeouts
+vi.mock('../fallbackBpmDetection', () => ({
+  detectBPMFallback: vi.fn().mockResolvedValue({
+    bpm: 120,
+    confidence: 0.8,
+    detectedBeats: 48
+  })
+}))
+
+vi.mock('../fallbackKeyDetection', () => ({
+  detectKeyFallback: vi.fn().mockResolvedValue({
+    keyName: 'C Major',
+    keySignature: 'C',
+    confidence: 0.8,
+    mode: 'major'
+  })
+}))
+
 // Mock AudioBuffer
 const createMockAudioBuffer = (duration: number = 10): AudioBuffer => {
   const mockBuffer = {

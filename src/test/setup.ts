@@ -13,7 +13,7 @@ class MockAudioBuffer {
     this.length = options.length
     this.sampleRate = options.sampleRate
     this.duration = options.length / options.sampleRate
-    
+
     // Initialize channel data arrays
     this.channelData = []
     for (let i = 0; i < options.numberOfChannels; i++) {
@@ -48,9 +48,9 @@ class MockAudioContext {
 }
 
 // Set up global mocks
-;(globalThis as any).AudioBuffer = MockAudioBuffer
-;(globalThis as any).AudioContext = MockAudioContext
-;(globalThis as any).webkitAudioContext = MockAudioContext
+; (globalThis as any).AudioBuffer = MockAudioBuffer
+  ; (globalThis as any).AudioContext = MockAudioContext
+  ; (globalThis as any).webkitAudioContext = MockAudioContext
 
 // Mock window object for browser APIs
 if (typeof window !== 'undefined') {
@@ -64,3 +64,17 @@ if (typeof window !== 'undefined') {
     value: MockAudioContext
   })
 }
+
+// Mock essentia.js to prevent initialization issues in tests
+; (globalThis as any).EssentiaWASM = undefined
+
+// Mock the essentia manager to always fail gracefully in tests
+import { vi } from 'vitest'
+
+vi.mock('../utils/essentiaManager', () => ({
+  essentiaManager: {
+    getEssentia: vi.fn().mockRejectedValue(new Error('EssentiaWASM not available in test environment')),
+    initialize: vi.fn().mockRejectedValue(new Error('EssentiaWASM not available in test environment')),
+    isInitialized: false
+  }
+}))
