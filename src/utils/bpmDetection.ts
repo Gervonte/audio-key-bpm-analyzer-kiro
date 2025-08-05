@@ -32,10 +32,11 @@ export class BPMDetector {
       onProgress?.(10)
 
       // Convert AudioBuffer to mono signal for essentia.js
+      // Note: audioBuffer is already preprocessed (mono + 16kHz) by AudioProcessor
       let monoSignal = essentia.audioBufferToMonoSignal(audioBuffer)
 
-      // Apply custom preprocessing for better beat detection
-      monoSignal = this.preprocessAudioForBeatDetection(monoSignal, audioBuffer.sampleRate)
+      // No additional preprocessing needed since AudioProcessor already handles it
+      // monoSignal is already at 16kHz and mono as per web demo
 
       // Check if audio is silent (all zeros or very low energy)
       const totalEnergy = monoSignal.reduce((sum, sample) => sum + Math.abs(sample), 0)
@@ -62,22 +63,9 @@ export class BPMDetector {
       return bestResult
     } catch (error) {
       console.error('BPM detection failed:', error)
-      // Fallback to simpler beat tracker
-      try {
-        const essentia = await essentiaManager.getEssentia()
-        const monoSignal = essentia.audioBufferToMonoSignal(audioBuffer)
-        const beatResult = essentia.BeatTrackerDegara(
-          essentia.arrayToVector(monoSignal),
-          this.maxBPM,
-          this.minBPM
-        )
-        return this.parseEssentiaBeatResult(beatResult, essentia, true)
-      } catch (fallbackError) {
-        console.error('Fallback BPM detection also failed:', fallbackError)
-        // Use custom fallback algorithm
-        console.log('Using fallback BPM detection algorithm')
-        return detectBPMFallback(audioBuffer, onProgress)
-      }
+      // Use custom fallback algorithm that doesn't require essentia.js
+      console.log('Using fallback BPM detection algorithm')
+      return detectBPMFallback(audioBuffer, onProgress)
     }
   }
 
@@ -242,82 +230,108 @@ export class BPMDetector {
   }
 
   /**
-   * Preprocess audio signal for better beat detection
+   * Preprocess audio signal exactly like the essentia.js web demo
    */
-  private preprocessAudioForBeatDetection(signal: Float32Array, _sampleRate: number): Float32Array {
-    // Temporarily disable custom preprocessing to avoid stack overflow
-    // TODO: Fix filter implementations
-
-    // Just normalize the signal for now
-    const processedSignal = new Float32Array(signal)
-    
-    // Find max value without using spread operator to avoid stack overflow
-    let maxValue = 0
-    for (let i = 0; i < processedSignal.length; i++) {
-      const absValue = Math.abs(processedSignal[i])
-      if (absValue > maxValue) {
-        maxValue = absValue
-      }
+  private preprocessAudioForBeatDetection(signal: Float32Array, sampleRate: number): Float32Array {
+    // The web demo downsamples to 16kHz for BPM detection
+    // If already at 16kHz, return as-is
+    if (sampleRate === 16000) {
+      return signal
     }
     
-    // Normalize if max value is greater than 0
-    if (maxValue > 0) {
-      for (let i = 0; i < processedSignal.length; i++) {
-        processedSignal[i] = processedSignal[i] / maxValue
-      }
-    }
-
-    return processedSignal
+    // Downsample to 16kHz using the same algorithm as the web demo
+    return this.downsampleArray(signal, sampleRate, 16000)
   }
 
   /**
-   * Analyze BPM using multiple methods and segments for better accuracy
+   * Downsample array using the exact same algorithm as the essentia.js web demo
+   */
+  private downsampleArray(audioIn: Float32Array, sampleRateIn: number, sampleRateOut: number): Float32Array {
+    if (sampleRateOut === sampleRateIn) {
+      return audioIn
+    }
+    
+    const sampleRateRatio = sampleRateIn / sampleRateOut
+    const newLength = Math.round(audioIn.length / sampleRateRatio)
+    const result = new Float32Array(newLength)
+    let offsetResult = 0
+    let offsetAudioIn = 0
+
+    while (offsetResult < result.length) {
+      const nextOffsetAudioIn = Math.round((offsetResult + 1) * sampleRateRatio)
+      let accum = 0
+      let count = 0
+      
+      for (let i = offsetAudioIn; i < nextOffsetAudioIn && i < audioIn.length; i++) {
+        accum += audioIn[i]
+        count++
+      }
+      
+      result[offsetResult] = accum / count
+      offsetResult++
+      offsetAudioIn = nextOffsetAudioIn
+    }
+
+    return result
+  }
+
+  /**
+   * Analyze BPM using the exact same method as essentia.js web demo
    */
   private async analyzeBPMWithMultipleMethods(essentia: any, monoSignal: Float32Array, _duration: number, onProgress?: (progress: number) => void): Promise<any[]> {
     const results: any[] = []
     
     try {
-      // Method 1: Full signal analysis with BeatTrackerMultiFeature
-      const fullResult = essentia.BeatTrackerMultiFeature(
-        essentia.arrayToVector(monoSignal),
-        this.maxBPM,
-        this.minBPM
+      // Use exact same PercivalBpmEstimator as the web demo
+      // essentia.PercivalBpmEstimator(vectorSignal, 1024, 2048, 128, 128, 210, 50, 16000).bpm
+      const vectorSignal = essentia.arrayToVector(monoSignal)
+      const bpmResult = essentia.PercivalBpmEstimator(
+        vectorSignal,
+        1024,  // frameSize
+        2048,  // hopSize
+        128,   // bufferSize
+        128,   // minBpm
+        210,   // maxBpm
+        50,    // stepBpm
+        16000  // sampleRate
       )
       
-      const fullBPM = this.parseEssentiaBeatResult(fullResult, essentia)
+      // PercivalBpmEstimator returns an object with a bpm property
+      const bpmValue = bpmResult.bpm || 120
+      
       results.push({
-        method: 'BeatTrackerMultiFeature_Full',
-        result: fullBPM,
+        method: 'PercivalBpmEstimator_WebDemo',
+        result: {
+          bpm: Math.round(bpmValue),
+          confidence: 0.8, // PercivalBpmEstimator doesn't provide confidence, use default
+          detectedBeats: 0  // Not available from this algorithm
+        },
         weight: 1.0
-      })
-      onProgress?.(50)
-    } catch (error) {
-      console.log('BeatTrackerMultiFeature failed:', error)
-    }
-
-    try {
-      // Method 2: Analyze middle segment (often more stable)
-      const segmentStart = Math.floor(monoSignal.length * 0.25)
-      const segmentEnd = Math.floor(monoSignal.length * 0.75)
-      const middleSegment = monoSignal.slice(segmentStart, segmentEnd)
-      
-      const segmentResult = essentia.BeatTrackerMultiFeature(
-        essentia.arrayToVector(middleSegment),
-        this.maxBPM,
-        this.minBPM
-      )
-      
-      const segmentBPM = this.parseEssentiaBeatResult(segmentResult, essentia)
-      results.push({
-        method: 'BeatTrackerMultiFeature_Middle',
-        result: segmentBPM,
-        weight: 0.8
       })
       onProgress?.(70)
     } catch (error) {
-      console.log('Middle segment BPM analysis failed:', error)
+      console.log('Web demo PercivalBpmEstimator failed, trying BeatTrackerMultiFeature:', error)
+      
+      // Fallback to BeatTrackerMultiFeature if PercivalBpmEstimator fails
+      try {
+        const fallbackResult = essentia.BeatTrackerMultiFeature(
+          essentia.arrayToVector(monoSignal),
+          this.maxBPM,
+          this.minBPM
+        )
+        
+        const fallbackBPM = this.parseEssentiaBeatResult(fallbackResult, essentia)
+        results.push({
+          method: 'BeatTrackerMultiFeature_Fallback',
+          result: fallbackBPM,
+          weight: 0.8
+        })
+      } catch (fallbackError) {
+        console.log('BeatTrackerMultiFeature fallback also failed:', fallbackError)
+      }
     }
 
+    onProgress?.(90)
     return results
   }
 

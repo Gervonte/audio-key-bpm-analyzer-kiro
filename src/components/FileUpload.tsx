@@ -15,12 +15,14 @@ interface FileUploadProps {
   onFileSelect: (file: File) => void
   isProcessing: boolean
   acceptedFormats?: string[]
+  onProcessingComplete?: () => void
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,
   isProcessing,
-  acceptedFormats = SUPPORTED_FORMATS
+  acceptedFormats = SUPPORTED_FORMATS,
+  onProcessingComplete
 }) => {
   const [isDragOver, setIsDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +42,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       setError(validation.error || 'Invalid file')
       return validation
     }
-    
+
     setError(null)
     return validation
   }, [])
@@ -79,14 +81,24 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     }
   }, [isProcessing, handleFileSelect])
 
+  const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null)
+
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
+      setInputRef(e.target) // Store reference to reset later
       handleFileSelect(files[0])
+      // Don't reset the input immediately - this causes NotReadableError
     }
-    // Reset input value to allow selecting the same file again
-    e.target.value = ''
   }, [handleFileSelect])
+
+  // Reset input when processing is complete
+  React.useEffect(() => {
+    if (!isProcessing && inputRef) {
+      inputRef.value = ''
+      setInputRef(null)
+    }
+  }, [isProcessing, inputRef])
 
   const handleClick = useCallback(() => {
     if (!isProcessing) {
@@ -169,29 +181,29 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           style={{ display: 'none' }}
           disabled={isProcessing}
         />
-        
+
         <VStack gap={{ base: 2, md: 3 }}>
-          <Text 
-            fontSize={{ base: 'lg', md: 'xl' }} 
-            fontWeight="medium" 
+          <Text
+            fontSize={{ base: 'lg', md: 'xl' }}
+            fontWeight="medium"
             color="black"
             textAlign="center"
             px={{ base: 2, md: 0 }}
           >
-            {isProcessing 
-              ? 'Processing audio file...' 
-              : isDragOver 
-                ? 'Drop your audio file here' 
+            {isProcessing
+              ? 'Processing audio file...'
+              : isDragOver
+                ? 'Drop your audio file here'
                 : 'Drag & drop your audio file here'
             }
           </Text>
-          
+
           {!isProcessing && (
             <Text fontSize="sm" color="gray.600">
               or
             </Text>
           )}
-          
+
           <Button
             colorScheme="red"
             variant="outline"
@@ -211,7 +223,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           >
             {isProcessing ? 'Processing...' : 'Choose File'}
           </Button>
-          
+
           {!isProcessing && (
             <VStack gap={1} textAlign="center">
               <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.500">
@@ -222,7 +234,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({
               </Text>
             </VStack>
           )}
-          
+
           {isProcessing && (
             <VStack gap={1} textAlign="center">
               <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600" fontWeight="medium">

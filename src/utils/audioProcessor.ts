@@ -98,40 +98,84 @@ export class AudioProcessor {
   }
 
   /**
-   * Normalize audio buffer for consistent processing
+   * Preprocess audio exactly like the essentia.js web demo
+   * This includes monomixing and downsampling to 16kHz
    */
   normalizeAudio(audioBuffer: AudioBuffer): AudioBuffer {
-    // Create a new AudioBuffer with the same properties
-    const normalizedBuffer = new AudioBuffer({
-      numberOfChannels: audioBuffer.numberOfChannels,
-      length: audioBuffer.length,
-      sampleRate: audioBuffer.sampleRate
+    // First, convert to mono using the same algorithm as the web demo
+    const monoSignal = this.monomix(audioBuffer)
+    
+    // Then downsample to 16kHz using the same algorithm as the web demo
+    const downsampledSignal = this.downsampleArray(monoSignal, audioBuffer.sampleRate, 16000)
+    
+    // Create a new AudioBuffer with the processed audio
+    const processedBuffer = new AudioBuffer({
+      numberOfChannels: 1, // Mono
+      length: downsampledSignal.length,
+      sampleRate: 16000 // 16kHz as per web demo
     })
-
-    // Process each channel
-    for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
-      const inputData = audioBuffer.getChannelData(channel)
-      const outputData = normalizedBuffer.getChannelData(channel)
-
-      // Find peak amplitude
-      let peak = 0
-      for (let i = 0; i < inputData.length; i++) {
-        const abs = Math.abs(inputData[i])
-        if (abs > peak) {
-          peak = abs
-        }
-      }
-
-      // Normalize to prevent clipping while maintaining dynamic range
-      const normalizeRatio = peak > 0 ? Math.min(0.95 / peak, 1.0) : 1.0
-
-      // Apply normalization
-      for (let i = 0; i < inputData.length; i++) {
-        outputData[i] = inputData[i] * normalizeRatio
-      }
+    
+    // Copy the processed signal to the buffer
+    const channelData = processedBuffer.getChannelData(0)
+    for (let i = 0; i < downsampledSignal.length; i++) {
+      channelData[i] = downsampledSignal[i]
     }
 
-    return normalizedBuffer
+    return processedBuffer
+  }
+
+  /**
+   * Monomix using the exact same algorithm as the essentia.js web demo
+   */
+  private monomix(buffer: AudioBuffer): Float32Array {
+    let monoAudio: Float32Array
+    
+    if (buffer.numberOfChannels > 1) {
+      const leftCh = buffer.getChannelData(0)
+      const rightCh = buffer.getChannelData(1)
+      monoAudio = new Float32Array(leftCh.length)
+      
+      // Mix down to mono: 0.5 * (left + right)
+      for (let i = 0; i < leftCh.length; i++) {
+        monoAudio[i] = 0.5 * (leftCh[i] + rightCh[i])
+      }
+    } else {
+      monoAudio = buffer.getChannelData(0)
+    }
+
+    return monoAudio
+  }
+
+  /**
+   * Downsample array using the exact same algorithm as the essentia.js web demo
+   */
+  private downsampleArray(audioIn: Float32Array, sampleRateIn: number, sampleRateOut: number): Float32Array {
+    if (sampleRateOut === sampleRateIn) {
+      return audioIn
+    }
+    
+    const sampleRateRatio = sampleRateIn / sampleRateOut
+    const newLength = Math.round(audioIn.length / sampleRateRatio)
+    const result = new Float32Array(newLength)
+    let offsetResult = 0
+    let offsetAudioIn = 0
+
+    while (offsetResult < result.length) {
+      const nextOffsetAudioIn = Math.round((offsetResult + 1) * sampleRateRatio)
+      let accum = 0
+      let count = 0
+      
+      for (let i = offsetAudioIn; i < nextOffsetAudioIn && i < audioIn.length; i++) {
+        accum += audioIn[i]
+        count++
+      }
+      
+      result[offsetResult] = accum / count
+      offsetResult++
+      offsetAudioIn = nextOffsetAudioIn
+    }
+
+    return result
   }
 
   /**

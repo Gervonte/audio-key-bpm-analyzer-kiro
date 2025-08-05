@@ -177,12 +177,16 @@ describe('AudioProcessor', () => {
   })
 
   describe('normalizeAudio', () => {
-    it('should normalize audio buffer', () => {
+    it('should preprocess audio buffer to match web demo (mono + 16kHz)', () => {
       const normalizedBuffer = processor.normalizeAudio(mockAudioBuffer)
 
-      expect(normalizedBuffer.numberOfChannels).toBe(mockAudioBuffer.numberOfChannels)
-      expect(normalizedBuffer.length).toBe(mockAudioBuffer.length)
-      expect(normalizedBuffer.sampleRate).toBe(mockAudioBuffer.sampleRate)
+      // Should convert to mono (1 channel) and downsample to 16kHz as per web demo
+      expect(normalizedBuffer.numberOfChannels).toBe(1)
+      expect(normalizedBuffer.sampleRate).toBe(16000)
+      
+      // Length should be adjusted for the new sample rate
+      const expectedLength = Math.round(mockAudioBuffer.length * (16000 / mockAudioBuffer.sampleRate))
+      expect(normalizedBuffer.length).toBe(expectedLength)
     })
 
     it('should handle zero amplitude audio', () => {
@@ -191,6 +195,22 @@ describe('AudioProcessor', () => {
 
       const normalizedBuffer = processor.normalizeAudio(zeroBuffer)
       expect(normalizedBuffer).toBeDefined()
+      expect(normalizedBuffer.numberOfChannels).toBe(1)
+      expect(normalizedBuffer.sampleRate).toBe(16000)
+    })
+
+    it('should handle mono input correctly', () => {
+      const monoBuffer = {
+        duration: 10,
+        sampleRate: 44100,
+        numberOfChannels: 1, // Mono
+        length: 441000,
+        getChannelData: vi.fn().mockReturnValue(new Float32Array(441000))
+      } as unknown as AudioBuffer
+
+      const normalizedBuffer = processor.normalizeAudio(monoBuffer)
+      expect(normalizedBuffer.numberOfChannels).toBe(1)
+      expect(normalizedBuffer.sampleRate).toBe(16000)
     })
   })
 

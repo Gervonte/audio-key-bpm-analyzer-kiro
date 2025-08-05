@@ -23,10 +23,11 @@ export class KeyDetector {
       onProgress?.(10)
 
       // Convert AudioBuffer to mono signal for essentia.js
+      // Note: audioBuffer is already preprocessed (mono + 16kHz) by AudioProcessor
       let monoSignal = essentia.audioBufferToMonoSignal(audioBuffer)
       
-      // Apply custom preprocessing for better key detection
-      monoSignal = this.preprocessAudioForKeyDetection(monoSignal, audioBuffer.sampleRate)
+      // No additional preprocessing needed since AudioProcessor already handles it
+      // monoSignal is already at 16kHz and mono as per web demo
       
       onProgress?.(30)
 
@@ -79,72 +80,105 @@ export class KeyDetector {
   }
 
   /**
-   * Preprocess audio signal for better key detection
+   * Preprocess audio signal exactly like the essentia.js web demo
    */
-  private preprocessAudioForKeyDetection(signal: Float32Array, _sampleRate: number): Float32Array {
-    // Temporarily disable custom preprocessing to avoid stack overflow
-    // TODO: Fix filter implementations
-    
-    // Just normalize the signal for now
-    const processedSignal = new Float32Array(signal)
-    
-    // Find max value without using spread operator to avoid stack overflow
-    let maxValue = 0
-    for (let i = 0; i < processedSignal.length; i++) {
-      const absValue = Math.abs(processedSignal[i])
-      if (absValue > maxValue) {
-        maxValue = absValue
-      }
+  private preprocessAudioForKeyDetection(signal: Float32Array, sampleRate: number): Float32Array {
+    // The web demo downsamples to 16kHz for key detection
+    // If already at 16kHz, return as-is
+    if (sampleRate === 16000) {
+      return signal
     }
     
-    // Normalize if max value is greater than 0
-    if (maxValue > 0) {
-      for (let i = 0; i < processedSignal.length; i++) {
-        processedSignal[i] = processedSignal[i] / maxValue
-      }
-    }
-    
-    return processedSignal
+    // Downsample to 16kHz using the same algorithm as the web demo
+    return this.downsampleArray(signal, sampleRate, 16000)
   }
 
   /**
-   * Analyze key using multiple methods and segments for better accuracy
+   * Downsample array using the exact same algorithm as the essentia.js web demo
+   */
+  private downsampleArray(audioIn: Float32Array, sampleRateIn: number, sampleRateOut: number): Float32Array {
+    if (sampleRateOut === sampleRateIn) {
+      return audioIn
+    }
+    
+    const sampleRateRatio = sampleRateIn / sampleRateOut
+    const newLength = Math.round(audioIn.length / sampleRateRatio)
+    const result = new Float32Array(newLength)
+    let offsetResult = 0
+    let offsetAudioIn = 0
+
+    while (offsetResult < result.length) {
+      const nextOffsetAudioIn = Math.round((offsetResult + 1) * sampleRateRatio)
+      let accum = 0
+      let count = 0
+      
+      for (let i = offsetAudioIn; i < nextOffsetAudioIn && i < audioIn.length; i++) {
+        accum += audioIn[i]
+        count++
+      }
+      
+      result[offsetResult] = accum / count
+      offsetResult++
+      offsetAudioIn = nextOffsetAudioIn
+    }
+
+    return result
+  }
+
+  /**
+   * Analyze key using the exact same method as essentia.js web demo
    */
   private async analyzeKeyWithMultipleMethods(essentia: any, monoSignal: Float32Array, onProgress?: (progress: number) => void): Promise<any[]> {
     const results: any[] = []
     
     try {
-      // Method 1: Full signal analysis with KeyExtractor
-      const fullResult = essentia.KeyExtractor(essentia.arrayToVector(monoSignal))
-      results.push({
-        method: 'KeyExtractor_Full',
-        result: fullResult,
-        confidence: fullResult.strength || 0.5,
-        weight: 1.0
-      })
-      onProgress?.(50)
-    } catch (error) {
-      console.log('KeyExtractor failed:', error)
-    }
-
-    try {
-      // Method 2: Analyze middle segment (often most stable)
-      const segmentStart = Math.floor(monoSignal.length * 0.25)
-      const segmentEnd = Math.floor(monoSignal.length * 0.75)
-      const middleSegment = monoSignal.slice(segmentStart, segmentEnd)
+      // Use exact same KeyExtractor parameters as the web demo
+      // essentia.KeyExtractor(vectorSignal, true, 4096, 4096, 12, 3500, 60, 25, 0.2, 'bgate', 16000, 0.0001, 440, 'cosine', 'hann')
+      const vectorSignal = essentia.arrayToVector(monoSignal)
+      const keyResult = essentia.KeyExtractor(
+        vectorSignal,
+        true,    // pcpSize
+        4096,    // frameSize
+        4096,    // hopSize
+        12,      // profileType
+        3500,    // numHarmonics
+        60,      // minFrequency
+        25,      // maxFrequency
+        0.2,     // spectralPeaksThreshold
+        'bgate', // windowType
+        16000,   // sampleRate
+        0.0001,  // magnitudeThreshold
+        440,     // tuningFrequency
+        'cosine', // weightType
+        'hann'   // windowType
+      )
       
-      const segmentResult = essentia.KeyExtractor(essentia.arrayToVector(middleSegment))
       results.push({
-        method: 'KeyExtractor_Middle',
-        result: segmentResult,
-        confidence: segmentResult.strength || 0.5,
-        weight: 0.8
+        method: 'KeyExtractor_WebDemo',
+        result: keyResult,
+        confidence: keyResult.strength || 0.5,
+        weight: 1.0
       })
       onProgress?.(70)
     } catch (error) {
-      console.log('Middle segment analysis failed:', error)
+      console.log('Web demo KeyExtractor failed, trying default parameters:', error)
+      
+      // Fallback to default KeyExtractor if the specific parameters fail
+      try {
+        const vectorSignal = essentia.arrayToVector(monoSignal)
+        const fallbackResult = essentia.KeyExtractor(vectorSignal)
+        results.push({
+          method: 'KeyExtractor_Default',
+          result: fallbackResult,
+          confidence: fallbackResult.strength || 0.5,
+          weight: 0.8
+        })
+      } catch (fallbackError) {
+        console.log('Default KeyExtractor also failed:', fallbackError)
+      }
     }
 
+    onProgress?.(90)
     return results
   }
 

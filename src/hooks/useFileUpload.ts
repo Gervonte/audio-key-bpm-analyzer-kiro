@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 import { validateAudioFile, createAudioFile } from '../utils/validation'
-import { 
-  checkWebAudioSupport, 
-  createAudioContext, 
+import {
+  checkWebAudioSupport,
+  createAudioContext,
   closeAudioContext,
   validateAudioBuffer,
   preprocessAudioBuffer,
@@ -44,6 +44,13 @@ export const useFileUpload = (): UseFileUploadReturn => {
   }, [])
 
   const loadAudioFile = useCallback(async (file: File): Promise<AudioBuffer> => {
+    console.log('loadAudioFile called with:', {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      lastModified: file.lastModified
+    })
+
     setIsLoading(true)
     setError(null)
 
@@ -63,42 +70,66 @@ export const useFileUpload = (): UseFileUploadReturn => {
         throw new Error('Failed to create audio context. Your browser may not support Web Audio API.')
       }
 
-      // Read file as array buffer with timeout
-      const arrayBuffer = await Promise.race([
-        file.arrayBuffer(),
-        new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('File reading timeout')), 30000)
-        )
-      ])
+      // Read file as array buffer with timeout and better error handling
+      console.log('Starting to read file:', file.name, 'Size:', file.size)
+      let arrayBuffer: ArrayBuffer
+      try {
+        // Check if file is still accessible
+        if (!file || file.size === 0) {
+          throw new Error('File is no longer accessible or is empty')
+        }
+
+        // Add timeout for large files
+        arrayBuffer = await Promise.race([
+          file.arrayBuffer(),
+          new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('File reading timed out. Please try a smaller file or try again.')), 45000)
+          )
+        ])
+        console.log('File read successfully, buffer size:', arrayBuffer.byteLength)
+      } catch (fileError) {
+        console.error('File reading error:', fileError)
+        if (fileError instanceof Error) {
+          if (fileError.message.includes('permission')) {
+            throw new Error('File access denied. Please try selecting the file again.')
+          }
+          if (fileError.message.includes('timeout')) {
+            throw fileError // Re-throw timeout error as-is
+          }
+        }
+        throw new Error('Failed to read file. The file may have been moved, deleted, or is corrupted.')
+      }
 
       if (!arrayBuffer || arrayBuffer.byteLength === 0) {
         throw new Error('File appears to be empty or corrupted')
       }
 
       // Decode audio data with better error handling
+      console.log('Starting audio decoding...')
       let audioBuffer: AudioBuffer
       try {
         audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+        console.log('Audio decoded successfully, duration:', audioBuffer.duration)
       } catch (decodeError) {
         const error = decodeError as Error
-        
+
         if (isCorruptedAudioError(error)) {
           throw new Error(`Audio file appears to be corrupted or uses an unsupported codec. Please try re-exporting your audio file in MP3, WAV, FLAC, or M4A format.`)
         }
-        
+
         // Try to provide more specific error messages based on common issues
         if (error.message.includes('Unable to decode') || error.message.includes('InvalidStateError')) {
           throw new Error('Unable to decode audio file. The file may be corrupted, use an unsupported codec, or be in a format that your browser cannot process.')
         }
-        
+
         if (error.message.includes('NotSupportedError')) {
           throw new Error('Audio format not supported by your browser. Please convert to MP3, WAV, FLAC, or M4A.')
         }
-        
+
         if (error.message.includes('DataError')) {
           throw new Error('Audio file contains invalid data. Please check that the file is not corrupted.')
         }
-        
+
         throw new Error(`Failed to decode audio file. This may be due to an unsupported codec or corrupted file data.`)
       }
 
@@ -108,10 +139,9 @@ export const useFileUpload = (): UseFileUploadReturn => {
         throw new Error(bufferValidation.error || 'Invalid audio data')
       }
 
-      // Preprocess the audio buffer (normalization, filtering)
-      const processedBuffer = preprocessAudioBuffer(audioBuffer)
-      
-      return processedBuffer
+      // Return the raw audio buffer - preprocessing will be done later in AudioProcessor
+      // to match the essentia.js web demo exactly (mono + 16kHz)
+      return audioBuffer
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to load audio file'
       setError(errorMessage)
