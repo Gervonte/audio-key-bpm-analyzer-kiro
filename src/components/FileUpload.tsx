@@ -15,14 +15,12 @@ interface FileUploadProps {
   onFileSelect: (file: File) => void
   isProcessing: boolean
   acceptedFormats?: string[]
-  onProcessingComplete?: () => void
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,
   isProcessing,
-  acceptedFormats = SUPPORTED_FORMATS,
-  onProcessingComplete
+  acceptedFormats = SUPPORTED_FORMATS
 }) => {
   const [isDragOver, setIsDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)

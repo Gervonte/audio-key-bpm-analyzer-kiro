@@ -79,51 +79,7 @@ export class KeyDetector {
     }
   }
 
-  /**
-   * Preprocess audio signal exactly like the essentia.js web demo
-   */
-  private preprocessAudioForKeyDetection(signal: Float32Array, sampleRate: number): Float32Array {
-    // The web demo downsamples to 16kHz for key detection
-    // If already at 16kHz, return as-is
-    if (sampleRate === 16000) {
-      return signal
-    }
-    
-    // Downsample to 16kHz using the same algorithm as the web demo
-    return this.downsampleArray(signal, sampleRate, 16000)
-  }
 
-  /**
-   * Downsample array using the exact same algorithm as the essentia.js web demo
-   */
-  private downsampleArray(audioIn: Float32Array, sampleRateIn: number, sampleRateOut: number): Float32Array {
-    if (sampleRateOut === sampleRateIn) {
-      return audioIn
-    }
-    
-    const sampleRateRatio = sampleRateIn / sampleRateOut
-    const newLength = Math.round(audioIn.length / sampleRateRatio)
-    const result = new Float32Array(newLength)
-    let offsetResult = 0
-    let offsetAudioIn = 0
-
-    while (offsetResult < result.length) {
-      const nextOffsetAudioIn = Math.round((offsetResult + 1) * sampleRateRatio)
-      let accum = 0
-      let count = 0
-      
-      for (let i = offsetAudioIn; i < nextOffsetAudioIn && i < audioIn.length; i++) {
-        accum += audioIn[i]
-        count++
-      }
-      
-      result[offsetResult] = accum / count
-      offsetResult++
-      offsetAudioIn = nextOffsetAudioIn
-    }
-
-    return result
-  }
 
   /**
    * Analyze key using the exact same method as essentia.js web demo

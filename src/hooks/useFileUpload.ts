@@ -5,7 +5,6 @@ import {
   createAudioContext,
   closeAudioContext,
   validateAudioBuffer,
-  preprocessAudioBuffer,
   isCorruptedAudioError
 } from '../utils/audioProcessing'
 import { SUPPORTED_FORMATS } from '../types'
