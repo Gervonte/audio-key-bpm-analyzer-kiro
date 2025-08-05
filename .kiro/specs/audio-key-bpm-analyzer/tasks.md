@@ -157,7 +157,16 @@
   - Maintain clean, non-overwhelming UI while being informative
   - _Requirements: 2.4, 3.4_
 
-- [ ] 21. Optimize fallback algorithms for better performance and accuracy
+- [ ] 21. Implement confidence scoring for alternative tempo suggestions using essentia.js
+  - Use BeatTrackerDegara or BeatTrackerMultiFeature to analyze beat positions and spacing
+  - Implement onset rate analysis using OnsetRate or OnsetDetection to measure transient density
+  - Calculate confidence scores for half-time/double-time suggestions based on beat consistency
+  - Use higher onset rates to indicate faster actual tempos (supporting double-time suggestions)
+  - Update TempoSuggestions component to display calculated confidence scores for alternatives
+  - Add logic to prefer suggestions with higher confidence scores in the UI
+  - _Requirements: 2.4, 3.4_
+
+- [ ] 22. Optimize fallback algorithms for better performance and accuracy
   - Improve fallback BPM detection algorithm performance to reduce timeout issues
   - Optimize fallback key detection algorithm for better accuracy and speed
   - Add more sophisticated onset detection for BPM analysis
@@ -167,7 +176,7 @@
   - Add better error handling and edge case management in fallback algorithms
   - _Requirements: 2.1, 2.2, 4.2_
 
-- [ ] 22. Add advanced performance optimizations and memory management (Optional)
+- [ ] 23. Add advanced performance optimizations and memory management (Optional)
   - Implement caching for repeated analysis of same files
   - Add progressive loading for large audio files
   - Optimize waveform rendering for large audio files with downsampling
