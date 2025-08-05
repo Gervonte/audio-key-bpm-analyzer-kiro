@@ -8,6 +8,7 @@ import {
 } from '@chakra-ui/react'
 import type { AnalysisResult } from '../types'
 import { ErrorDisplay } from './ErrorDisplay'
+import { TempoSuggestions } from './TempoSuggestions'
 
 interface ResultsDisplayProps {
   analysisResult?: AnalysisResult
@@ -165,6 +166,12 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
                 </VStack>
               </VStack>
             </Box>
+
+            {/* Tempo Suggestions */}
+            <TempoSuggestions 
+              detectedBPM={bpm.bpm} 
+              confidence={bpm.confidence} 
+            />
 
             <Box w="100%" h="1px" bg="gray.200" />
 
