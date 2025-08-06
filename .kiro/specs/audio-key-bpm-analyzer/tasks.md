@@ -157,7 +157,27 @@
   - Maintain clean, non-overwhelming UI while being informative
   - _Requirements: 2.4, 3.4_
 
-- [ ] 21. Implement confidence scoring for alternative tempo suggestions using essentia.js
+- [ ] 21. Add advanced performance optimizations and memory management (Optional)
+  - Implement caching for repeated analysis of same files
+  - Add progressive loading for large audio files
+  - Optimize waveform rendering for large audio files with downsampling
+  - Add memory usage monitoring and garbage collection triggers
+  - Implement file chunking for very large files
+  - _Requirements: 4.2, 4.4_
+
+- [ ] 22. Implement advanced audio analysis pipeline with HPSS separation and ensemble methods
+  - Implement Harmonic-Percussive Source Separation using essentia.HarmonicPercussiveSeparation
+  - Add pre-filtering with essentia.BandPassFilter (50-8000 Hz) and essentia.PeakNormalizer
+  - Replace single 15% audio slice with multi-slice or energy-based sampling strategy
+  - Implement key extraction on harmonic component using essentia.KeyExtractor across multiple slices
+  - Implement tempo extraction on percussive component using essentia.PercivalBpmEstimator and essentia.RhythmExtractor
+  - Add ensemble aggregation with mode voting for key results and median for BPM results
+  - Create A/B evaluation harness with curated test set and ground-truth key/BPM values
+  - Implement parameter tuning for HPSS frameSize/hopSize, filter cutoffs, and RhythmExtractor thresholds
+  - Add per-track failure analysis and diagnostic logging for iterative improvement
+  - _Requirements: 2.1, 2.2, 2.3_
+
+- [ ] 23. Implement confidence scoring for alternative tempo suggestions using essentia.js
   - Use BeatTrackerDegara or BeatTrackerMultiFeature to analyze beat positions and spacing
   - Implement onset rate analysis using OnsetRate or OnsetDetection to measure transient density
   - Calculate confidence scores for half-time/double-time suggestions based on beat consistency
@@ -166,7 +186,7 @@
   - Add logic to prefer suggestions with higher confidence scores in the UI
   - _Requirements: 2.4, 3.4_
 
-- [ ] 22. Optimize fallback algorithms for better performance and accuracy
+- [ ] 24. Optimize fallback algorithms for better performance and accuracy
   - Improve fallback BPM detection algorithm performance to reduce timeout issues
   - Optimize fallback key detection algorithm for better accuracy and speed
   - Add more sophisticated onset detection for BPM analysis
@@ -176,15 +196,7 @@
   - Add better error handling and edge case management in fallback algorithms
   - _Requirements: 2.1, 2.2, 4.2_
 
-- [ ] 23. Add advanced performance optimizations and memory management (Optional)
-  - Implement caching for repeated analysis of same files
-  - Add progressive loading for large audio files
-  - Optimize waveform rendering for large audio files with downsampling
-  - Add memory usage monitoring and garbage collection triggers
-  - Implement file chunking for very large files
-  - _Requirements: 4.2, 4.4_
-
-- [ ] 24. Update README with comprehensive documentation
+- [ ] 25. Update README with comprehensive documentation
   - Create detailed README.md with project overview and feature description
   - Add installation and setup instructions for development
   - Document supported audio formats and file size limits
