@@ -183,3 +183,14 @@
   - Add memory usage monitoring and garbage collection triggers
   - Implement file chunking for very large files
   - _Requirements: 4.2, 4.4_
+
+- [ ] 24. Update README with comprehensive documentation
+  - Create detailed README.md with project overview and feature description
+  - Add installation and setup instructions for development
+  - Document supported audio formats and file size limits
+  - Include usage instructions with screenshots or examples
+  - Add technical details about essentia.js integration and algorithms used
+  - Document the technology stack (React, TypeScript, Chakra UI, essentia.js)
+  - Include troubleshooting section for common issues
+  - Add performance considerations and browser compatibility information
+  - _Requirements: 1.1, 1.2, 2.1, 3.1, 4.1_
