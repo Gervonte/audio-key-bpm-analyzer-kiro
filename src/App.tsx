@@ -1,10 +1,10 @@
 import { Routes, Route } from 'react-router-dom'
-import { 
-  Box, 
-  Heading, 
-  VStack, 
-  Text, 
-  HStack, 
+import {
+  Box,
+  Heading,
+  VStack,
+  Text,
+  HStack,
   Container,
   Flex,
   Spinner,
@@ -18,15 +18,20 @@ import { ResultsDisplay } from './components/ResultsDisplay'
 import { ErrorDisplay } from './components/ErrorDisplay'
 import { MemoryMonitor } from './components/MemoryMonitor'
 import { CacheStats } from './components/CacheStats'
+import { DebugInfo } from './components/DebugInfo'
 import { useFileUpload } from './hooks/useFileUpload'
 import { useAudioProcessor } from './hooks/useAudioProcessor'
 import { useAudioProcessingRetry } from './hooks/useRetry'
+import { getDebugConfig } from './utils/debugMode'
 import type { AppState } from './types'
 
 // Processing stages for better state management
 type ProcessingStage = 'idle' | 'loading' | 'analyzing' | 'complete' | 'error'
 
 function App() {
+  // Get debug configuration from URL parameters
+  const debugConfig = getDebugConfig()
+
   // Centralized app state following the AppState interface
   const [appState, setAppState] = useState<AppState>({
     currentFile: null,
@@ -53,8 +58,10 @@ function App() {
 
   // Hooks
   const { loadAudioFile, createAudioFileObject } = useFileUpload()
-  const { processAudio, isProcessing, progress, error: processingError, resetState } = useAudioProcessor()
-  
+  const { processAudio, isProcessing, progress, error: processingError, resetState } = useAudioProcessor({
+    enableCaching: debugConfig.enableCaching
+  })
+
   // Retry functionality for audio processing
   const {
     execute: executeAudioProcessing,
@@ -69,7 +76,7 @@ function App() {
       // Clear reference to allow garbage collection
       audioBufferRef.current = null
     }
-    
+
     if (cleanupTimeoutRef.current) {
       clearTimeout(cleanupTimeoutRef.current)
       cleanupTimeoutRef.current = null
@@ -114,14 +121,14 @@ function App() {
     resetState()
 
     try {
-      // Load the audio file and create AudioBuffer with progress tracking
-      const buffer = await loadAudioFile(file, (loadProgress) => {
+      // Load the audio file and create AudioBuffer with optional progress tracking
+      const buffer = await loadAudioFile(file, debugConfig.enableProgressiveLoading ? (loadProgress) => {
         // File loading is 0-50% of total progress
         setAppState(prev => ({
           ...prev,
           progress: loadProgress * 0.5
         }))
-      })
+      } : undefined)
       audioBufferRef.current = buffer
 
       // Create AudioFile object with metadata
@@ -137,9 +144,9 @@ function App() {
         setProcessingStage('analyzing')
         console.log('Audio loaded successfully, starting analysis...')
 
-        // Start audio analysis with retry capability and caching
+        // Start audio analysis with retry capability and optional caching
         try {
-          const result = await executeAudioProcessing(buffer, file)
+          const result = await executeAudioProcessing(buffer, debugConfig.enableCaching ? file : undefined)
           setAppState(prev => ({
             ...prev,
             analysisResult: result
@@ -171,7 +178,7 @@ function App() {
   const handleReset = useCallback(() => {
     // Cleanup audio resources before reset
     cleanupAudioResources()
-    
+
     // Reset centralized state
     setAppState({
       currentFile: null,
@@ -189,14 +196,14 @@ function App() {
 
   const handleRetryAnalysis = useCallback(async () => {
     if (!canRetryProcessing || !appState.audioBuffer || !appState.currentFile) return
-    
+
     setProcessingStage('analyzing')
     setAppState(prev => ({
       ...prev,
       analysisResult: null,
       error: null
     }))
-    
+
     try {
       const result = await retryAudioProcessing()
       setAppState(prev => ({
@@ -317,17 +324,17 @@ function App() {
         <VStack gap={{ base: 4, md: 6 }} align="center" h="100%">
           {/* Header Section */}
           <VStack gap={3} textAlign="center" w="100%">
-            <Heading 
-              as="h1" 
+            <Heading
+              as="h1"
               size={{ base: "2xl", md: "3xl" }}
               lineHeight="shorter"
             >
               Audio Key & BPM Analyzer
             </Heading>
-            <Heading 
-              as="h2" 
-              size={{ base: "md", md: "lg" }} 
-              color="gray.600" 
+            <Heading
+              as="h2"
+              size={{ base: "md", md: "lg" }}
+              color="gray.600"
               fontWeight="normal"
               px={{ base: 2, md: 0 }}
             >
@@ -339,6 +346,11 @@ function App() {
           <Routes>
             <Route path="/" element={
               <VStack gap={5} align="center" w="100%" flex="1">
+                {/* Debug Info - Only show in debug mode */}
+                <Box w="100%" maxW={contentMaxW}>
+                  <DebugInfo />
+                </Box>
+
                 {/* File Upload Section */}
                 <Box w="100%" maxW={contentMaxW}>
                   <FileUpload
@@ -353,7 +365,7 @@ function App() {
                 {/* Error Display */}
                 {appState.error && processingStage === 'error' && (
                   <Box w="100%" maxW={contentMaxW}>
-                    <ErrorDisplay 
+                    <ErrorDisplay
                       error={appState.error}
                       onRetry={canRetryProcessing ? handleRetryAnalysis : undefined}
                       onDismiss={handleReset}
@@ -385,21 +397,28 @@ function App() {
                   />
                 </Box>
 
-                {/* Performance Monitoring Section */}
-                <VStack gap={4} w="100%" maxW={contentMaxW}>
-                  <Text fontSize="lg" fontWeight="bold" color="gray.700">
-                    Performance Monitoring
-                  </Text>
-                  
-                  <HStack gap={4} w="100%" align="start" flexWrap="wrap">
-                    <Box flex="1" minW="250px">
-                      <MemoryMonitor showDetails={true} />
-                    </Box>
-                    <Box flex="1" minW="250px">
-                      <CacheStats showControls={true} />
-                    </Box>
-                  </HStack>
-                </VStack>
+                {/* Performance Monitoring Section - Only show in debug mode */}
+                {debugConfig.showPerformanceMonitoring && (
+                  <VStack gap={4} w="100%" maxW={contentMaxW}>
+                    <HStack justify="space-between" w="100%">
+                      <Text fontSize="lg" fontWeight="bold" color="gray.700">
+                        Performance Monitoring
+                      </Text>
+                      <Text fontSize="xs" color="gray.500" fontStyle="italic">
+                        Debug Mode: Add ?debug=true to URL
+                      </Text>
+                    </HStack>
+
+                    <HStack gap={4} w="100%" align="start" flexWrap="wrap">
+                      <Box flex="1" minW="250px">
+                        <MemoryMonitor showDetails={true} />
+                      </Box>
+                      <Box flex="1" minW="250px">
+                        <CacheStats showControls={true} />
+                      </Box>
+                    </HStack>
+                  </VStack>
+                )}
               </VStack>
             } />
           </Routes>
