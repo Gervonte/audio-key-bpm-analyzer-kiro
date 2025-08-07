@@ -5,7 +5,7 @@ import type { AnalysisResult } from '../types'
 import { AudioProcessor } from '../utils/audioProcessor'
 
 export interface UseAudioProcessorResult {
-  processAudio: (audioBuffer: AudioBuffer) => Promise<AnalysisResult>
+  processAudio: (audioBuffer: AudioBuffer, file?: File) => Promise<AnalysisResult>
   isProcessing: boolean
   progress: number
   error: string | null
@@ -15,10 +15,11 @@ export interface UseAudioProcessorResult {
 
 export interface UseAudioProcessorOptions {
   timeoutMs?: number
+  enableCaching?: boolean
 }
 
 export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAudioProcessorResult {
-  const { timeoutMs = 30000 } = options
+  const { timeoutMs = 30000, enableCaching = true } = options
   
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -60,7 +61,7 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
     resetState()
   }, [resetState])
 
-  const processAudio = useCallback(async (audioBuffer: AudioBuffer): Promise<AnalysisResult> => {
+  const processAudio = useCallback(async (audioBuffer: AudioBuffer, file?: File): Promise<AnalysisResult> => {
     if (!processorRef.current) {
       throw new Error('Audio processor not initialized')
     }
@@ -83,10 +84,12 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
         }, timeoutMs)
       })
 
-      // Process audio with progress tracking
+      // Process audio with progress tracking and caching
       const processingPromise = processorRef.current.processAudio(audioBuffer, {
         timeoutMs,
-        onProgress
+        onProgress,
+        file,
+        enableCaching
       })
 
       // Race between processing and timeout
@@ -141,7 +144,7 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
 
       throw new Error(errorMessage)
     }
-  }, [timeoutMs, resetState])
+  }, [timeoutMs, enableCaching, resetState])
 
   return {
     processAudio,

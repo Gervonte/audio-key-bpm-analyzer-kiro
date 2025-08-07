@@ -90,7 +90,12 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
   useEffect(() => {
     if (audioBuffer && !isLoading) {
       try {
-        const data = generateWaveformData(audioBuffer)
+        // Use optimized waveform generation with responsive sizing
+        const targetWidth = canvasSize.width
+        const data = generateWaveformData(audioBuffer, { 
+          targetWidth: Math.floor(targetWidth / 2), // Optimize for performance
+          maxPeaks: window.innerWidth <= 768 ? 1000 : 2000 // Mobile optimization
+        })
         setWaveformData(data)
       } catch (err) {
         console.error('Failed to generate waveform data:', err)
@@ -99,7 +104,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
     } else {
       setWaveformData(null)
     }
-  }, [audioBuffer, isLoading, generateWaveformData])
+  }, [audioBuffer, isLoading, generateWaveformData, canvasSize.width])
 
   // Draw waveform when data or progress changes
   useEffect(() => {

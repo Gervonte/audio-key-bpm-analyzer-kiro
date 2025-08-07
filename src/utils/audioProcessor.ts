@@ -3,10 +3,14 @@
 import type { AnalysisResult, KeyResult, BPMResult, ConfidenceScores } from '../types'
 import { KeyDetector } from './keyDetection'
 import { BPMDetector } from './bpmDetection'
+import { audioCache } from './audioCache'
+import { memoryManager } from './memoryManager'
 
 export interface AudioProcessorOptions {
   timeoutMs?: number
   onProgress?: (progress: number) => void
+  file?: File // For caching purposes
+  enableCaching?: boolean
 }
 
 export class AudioProcessor {
@@ -26,8 +30,35 @@ export class AudioProcessor {
     audioBuffer: AudioBuffer,
     options: AudioProcessorOptions = {}
   ): Promise<AnalysisResult> {
-    const { timeoutMs = 30000, onProgress } = options
+    const { timeoutMs = 30000, onProgress, file, enableCaching = true } = options
     const startTime = performance.now()
+
+    // Check cache first if file is provided and caching is enabled
+    if (enableCaching && file) {
+      try {
+        const cachedResult = await audioCache.get(file)
+        if (cachedResult) {
+          onProgress?.(100)
+          return cachedResult
+        }
+      } catch (error) {
+        console.warn('Cache lookup failed:', error)
+      }
+    }
+
+    // Check memory before processing
+    const estimatedMemory = memoryManager.estimateAudioBufferMemory(audioBuffer)
+    if (!memoryManager.hasEnoughMemoryForProcessing(estimatedMemory)) {
+      // Try to free up memory
+      memoryManager.forceGarbageCollection()
+      
+      // Wait a bit and check again
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      if (!memoryManager.hasEnoughMemoryForProcessing(estimatedMemory)) {
+        throw new Error('Not enough memory to process this audio file. Try closing other browser tabs or using a smaller audio file.')
+      }
+    }
 
     // Create abort controller for cancellation
     this.abortController = new AbortController()
@@ -53,10 +84,21 @@ export class AudioProcessor {
       const result = await Promise.race([analysisPromise, timeoutPromise])
 
       const processingTime = performance.now() - startTime
-      return {
+      const finalResult = {
         ...result,
         processingTime
       }
+
+      // Cache the result if file is provided and caching is enabled
+      if (enableCaching && file) {
+        try {
+          await audioCache.set(file, finalResult)
+        } catch (error) {
+          console.warn('Failed to cache result:', error)
+        }
+      }
+
+      return finalResult
     } catch (error) {
       // Clean up on error
       this.cleanup()

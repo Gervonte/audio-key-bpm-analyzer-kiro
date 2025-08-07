@@ -16,6 +16,8 @@ import { FileUpload } from './components/FileUpload'
 import { WaveformDisplay } from './components/WaveformDisplay'
 import { ResultsDisplay } from './components/ResultsDisplay'
 import { ErrorDisplay } from './components/ErrorDisplay'
+import { MemoryMonitor } from './components/MemoryMonitor'
+import { CacheStats } from './components/CacheStats'
 import { useFileUpload } from './hooks/useFileUpload'
 import { useAudioProcessor } from './hooks/useAudioProcessor'
 import { useAudioProcessingRetry } from './hooks/useRetry'
@@ -112,8 +114,14 @@ function App() {
     resetState()
 
     try {
-      // Load the audio file and create AudioBuffer
-      const buffer = await loadAudioFile(file)
+      // Load the audio file and create AudioBuffer with progress tracking
+      const buffer = await loadAudioFile(file, (loadProgress) => {
+        // File loading is 0-50% of total progress
+        setAppState(prev => ({
+          ...prev,
+          progress: loadProgress * 0.5
+        }))
+      })
       audioBufferRef.current = buffer
 
       // Create AudioFile object with metadata
@@ -129,9 +137,9 @@ function App() {
         setProcessingStage('analyzing')
         console.log('Audio loaded successfully, starting analysis...')
 
-        // Start audio analysis with retry capability
+        // Start audio analysis with retry capability and caching
         try {
-          const result = await executeAudioProcessing(buffer)
+          const result = await executeAudioProcessing(buffer, file)
           setAppState(prev => ({
             ...prev,
             analysisResult: result
@@ -180,7 +188,7 @@ function App() {
   }, [resetState, cleanupAudioResources])
 
   const handleRetryAnalysis = useCallback(async () => {
-    if (!canRetryProcessing || !appState.audioBuffer) return
+    if (!canRetryProcessing || !appState.audioBuffer || !appState.currentFile) return
     
     setProcessingStage('analyzing')
     setAppState(prev => ({
@@ -205,7 +213,7 @@ function App() {
         error: retryError instanceof Error ? retryError.message : 'Retry failed'
       }))
     }
-  }, [canRetryProcessing, appState.audioBuffer, retryAudioProcessing])
+  }, [canRetryProcessing, appState.audioBuffer, appState.currentFile, retryAudioProcessing])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -376,6 +384,22 @@ function App() {
                     onRetry={canRetryProcessing ? handleRetryAnalysis : undefined}
                   />
                 </Box>
+
+                {/* Performance Monitoring Section */}
+                <VStack gap={4} w="100%" maxW={contentMaxW}>
+                  <Text fontSize="lg" fontWeight="bold" color="gray.700">
+                    Performance Monitoring
+                  </Text>
+                  
+                  <HStack gap={4} w="100%" align="start" flexWrap="wrap">
+                    <Box flex="1" minW="250px">
+                      <MemoryMonitor showDetails={true} />
+                    </Box>
+                    <Box flex="1" minW="250px">
+                      <CacheStats showControls={true} />
+                    </Box>
+                  </HStack>
+                </VStack>
               </VStack>
             } />
           </Routes>

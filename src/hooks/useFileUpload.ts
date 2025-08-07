@@ -9,10 +9,12 @@ import {
 } from '../utils/audioProcessing'
 import { SUPPORTED_FORMATS } from '../types'
 import type { AudioFile, ValidationResult } from '../types'
+import { loadLargeFile } from '../utils/progressiveLoader'
+import { memoryManager } from '../utils/memoryManager'
 
 interface UseFileUploadReturn {
   validateFile: (file: File) => ValidationResult
-  loadAudioFile: (file: File) => Promise<AudioBuffer>
+  loadAudioFile: (file: File, onProgress?: (progress: number) => void) => Promise<AudioBuffer>
   getSupportedFormats: () => readonly string[]
   createAudioFileObject: (file: File, audioBuffer?: AudioBuffer) => AudioFile | null
   checkBrowserCompatibility: () => { isSupported: boolean; error?: string }
@@ -42,7 +44,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
     return validateAudioFile(file)
   }, [])
 
-  const loadAudioFile = useCallback(async (file: File): Promise<AudioBuffer> => {
+  const loadAudioFile = useCallback(async (file: File, onProgress?: (progress: number) => void): Promise<AudioBuffer> => {
     console.log('loadAudioFile called with:', {
       name: file.name,
       size: file.size,
@@ -62,6 +64,19 @@ export const useFileUpload = (): UseFileUploadReturn => {
         throw new Error(validation.error || 'Invalid file')
       }
 
+      // Check memory before loading
+      const estimatedMemory = file.size * 2 // Rough estimate: file size + decoded buffer
+      if (!memoryManager.hasEnoughMemoryForProcessing(estimatedMemory)) {
+        memoryManager.forceGarbageCollection()
+        
+        // Wait and check again
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        if (!memoryManager.hasEnoughMemoryForProcessing(estimatedMemory)) {
+          throw new Error('Not enough memory to load this audio file. Try closing other browser tabs or using a smaller audio file.')
+        }
+      }
+
       // Create audio context with proper error handling
       try {
         audioContext = createAudioContext()
@@ -69,7 +84,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
         throw new Error('Failed to create audio context. Your browser may not support Web Audio API.')
       }
 
-      // Read file as array buffer with timeout and better error handling
+      // Use progressive loading for large files
       console.log('Starting to read file:', file.name, 'Size:', file.size)
       let arrayBuffer: ArrayBuffer
       try {
@@ -78,22 +93,27 @@ export const useFileUpload = (): UseFileUploadReturn => {
           throw new Error('File is no longer accessible or is empty')
         }
 
-        // Add timeout for large files
-        arrayBuffer = await Promise.race([
-          file.arrayBuffer(),
-          new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('File reading timed out. Please try a smaller file or try again.')), 45000)
-          )
-        ])
+        // Use progressive loading with progress tracking
+        arrayBuffer = await loadLargeFile(file, {
+          onProgress: (progress) => {
+            // File loading is 0-50% of total progress
+            onProgress?.(progress * 0.5)
+          }
+        })
+        
         console.log('File read successfully, buffer size:', arrayBuffer.byteLength)
+        onProgress?.(50) // File loading complete
       } catch (fileError) {
         console.error('File reading error:', fileError)
         if (fileError instanceof Error) {
           if (fileError.message.includes('permission')) {
             throw new Error('File access denied. Please try selecting the file again.')
           }
-          if (fileError.message.includes('timeout')) {
-            throw fileError // Re-throw timeout error as-is
+          if (fileError.message.includes('timeout') || fileError.message.includes('cancelled')) {
+            throw fileError // Re-throw timeout/cancellation error as-is
+          }
+          if (fileError.message.includes('memory')) {
+            throw new Error('Not enough memory to load this audio file. Try closing other browser tabs or using a smaller audio file.')
           }
         }
         throw new Error('Failed to read file. The file may have been moved, deleted, or is corrupted.')
@@ -105,10 +125,13 @@ export const useFileUpload = (): UseFileUploadReturn => {
 
       // Decode audio data with better error handling
       console.log('Starting audio decoding...')
+      onProgress?.(60) // Decoding started
+      
       let audioBuffer: AudioBuffer
       try {
         audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
         console.log('Audio decoded successfully, duration:', audioBuffer.duration)
+        onProgress?.(90) // Decoding complete
       } catch (decodeError) {
         const error = decodeError as Error
 
@@ -137,6 +160,8 @@ export const useFileUpload = (): UseFileUploadReturn => {
       if (!bufferValidation.isValid) {
         throw new Error(bufferValidation.error || 'Invalid audio data')
       }
+
+      onProgress?.(100) // Complete
 
       // Return the raw audio buffer - preprocessing will be done later in AudioProcessor
       // to match the essentia.js web demo exactly (mono + 16kHz)
