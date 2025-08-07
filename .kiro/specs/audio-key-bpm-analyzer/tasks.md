@@ -181,9 +181,12 @@
   - Implement key extraction on harmonic component using essentia.KeyExtractor across multiple slices
   - Implement tempo extraction on percussive component using essentia.PercivalBpmEstimator and essentia.RhythmExtractor
   - Add ensemble aggregation with mode voting for key results and median for BPM results
-  - Create A/B evaluation harness with curated test set and ground-truth key/BPM values
-  - Implement parameter tuning for HPSS frameSize/hopSize, filter cutoffs, and RhythmExtractor thresholds
-  - Add per-track failure analysis and diagnostic logging for iterative improvement
+  - Create A/B evaluation harness with curated test set and ground-truth key/BPM values (debug mode only)
+  - Integrate evaluation interface with debug mode system (?debug=true or ?eval=true)
+  - Add side-by-side algorithm comparison UI for developers
+  - Implement parameter tuning controls for HPSS frameSize/hopSize, filter cutoffs, and RhythmExtractor thresholds
+  - Add per-track failure analysis and diagnostic logging for iterative improvement (debug mode)
+  - Include accuracy metrics display and export functionality for development use
   - _Requirements: 2.1, 2.2, 2.3_
 
 - [ ] 24. Fix alternative tempo display logic for BPM detection
