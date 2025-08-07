@@ -165,7 +165,16 @@
   - Implement file chunking for very large files
   - _Requirements: 4.2, 4.4_
 
-- [ ] 22. Implement advanced audio analysis pipeline with HPSS separation and ensemble methods
+  - [ ] 22. Improve file upload progress bar smoothness and accuracy
+  - Fix progress bar that stops moving during file loading and jumps at the end
+  - Implement smoother progress updates during file reading and audio decoding phases
+  - Add more granular progress tracking for large file processing
+  - Ensure progress bar moves continuously rather than in discrete jumps
+  - Improve user experience with realistic progress indication throughout upload process
+  - Test with various file sizes to ensure consistent smooth progress behavior
+  - _Requirements: 3.2, 3.3, 4.4_
+
+- [ ] 23. Implement advanced audio analysis pipeline with HPSS separation and ensemble methods
   - Implement Harmonic-Percussive Source Separation using essentia.HarmonicPercussiveSeparation
   - Add pre-filtering with essentia.BandPassFilter (50-8000 Hz) and essentia.PeakNormalizer
   - Replace single 15% audio slice with multi-slice or energy-based sampling strategy
@@ -177,26 +186,7 @@
   - Add per-track failure analysis and diagnostic logging for iterative improvement
   - _Requirements: 2.1, 2.2, 2.3_
 
-- [ ] 23. Implement confidence scoring for alternative tempo suggestions using essentia.js
-  - Use BeatTrackerDegara or BeatTrackerMultiFeature to analyze beat positions and spacing
-  - Implement onset rate analysis using OnsetRate or OnsetDetection to measure transient density
-  - Calculate confidence scores for half-time/double-time suggestions based on beat consistency
-  - Use higher onset rates to indicate faster actual tempos (supporting double-time suggestions)
-  - Update TempoSuggestions component to display calculated confidence scores for alternatives
-  - Add logic to prefer suggestions with higher confidence scores in the UI
-  - _Requirements: 2.4, 3.4_
-
-- [ ] 24. Optimize fallback algorithms for better performance and accuracy
-  - Improve fallback BPM detection algorithm performance to reduce timeout issues
-  - Optimize fallback key detection algorithm for better accuracy and speed
-  - Add more sophisticated onset detection for BPM analysis
-  - Implement better chroma feature extraction for key detection
-  - Add algorithm parameter tuning for hip-hop instrumental analysis
-  - Reduce computational complexity while maintaining accuracy
-  - Add better error handling and edge case management in fallback algorithms
-  - _Requirements: 2.1, 2.2, 4.2_
-
-- [ ] 25. Fix alternative tempo display logic for BPM detection
+- [ ] 24. Fix alternative tempo display logic for BPM detection
   - Investigate cases where BPM is detected at double-time when it's actually half-time
   - Update alternative tempo display to show half-time (72 BPM) instead of detected tempo (144 BPM) when appropriate
   - Implement logic to determine when detected BPM is likely double-time vs actual tempo
@@ -205,15 +195,24 @@
   - Test with various hip-hop instrumentals to validate detection accuracy
   - _Requirements: 2.4, 3.4_
 
-- [ ] 26. Improve file upload progress bar smoothness and accuracy
-  - Fix progress bar that stops moving during file loading and jumps at the end
-  - Implement smoother progress updates during file reading and audio decoding phases
-  - Add more granular progress tracking for large file processing
-  - Ensure progress bar moves continuously rather than in discrete jumps
-  - Improve user experience with realistic progress indication throughout upload process
-  - Test with various file sizes to ensure consistent smooth progress behavior
-  - _Requirements: 3.2, 3.3, 4.4_
-
+- [ ] 25. Implement confidence scoring for alternative tempo suggestions using essentia.js
+  - Use BeatTrackerDegara or BeatTrackerMultiFeature to analyze beat positions and spacing
+  - Implement onset rate analysis using OnsetRate or OnsetDetection to measure transient density
+  - Calculate confidence scores for half-time/double-time suggestions based on beat consistency
+  - Use higher onset rates to indicate faster actual tempos (supporting double-time suggestions)
+  - Update TempoSuggestions component to display calculated confidence scores for alternatives
+  - Add logic to prefer suggestions with higher confidence scores in the UI
+  - _Requirements: 2.4, 3.4_
+- [ ] 26. Optimize fallback algorithms for better performance and accuracy
+  - Improve fallback BPM detection algorithm performance to reduce timeout issues
+  - Optimize fallback key detection algorithm for better accuracy and speed
+  - Add more sophisticated onset detection for BPM analysis
+  - Implement better chroma feature extraction for key detection
+  - Add algorithm parameter tuning for hip-hop instrumental analysis
+  - Reduce computational complexity while maintaining accuracy
+  - Add better error handling and edge case management in fallback algorithms
+  - _Requirements: 2.1, 2.2, 4.2_
+  
 - [ ] 27. Update README with comprehensive documentation
   - Create detailed README.md with project overview and feature description
   - Add installation and setup instructions for development
