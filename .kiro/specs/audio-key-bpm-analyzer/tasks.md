@@ -196,7 +196,25 @@
   - Add better error handling and edge case management in fallback algorithms
   - _Requirements: 2.1, 2.2, 4.2_
 
-- [ ] 25. Update README with comprehensive documentation
+- [ ] 25. Fix alternative tempo display logic for BPM detection
+  - Investigate cases where BPM is detected at double-time when it's actually half-time
+  - Update alternative tempo display to show half-time (72 BPM) instead of detected tempo (144 BPM) when appropriate
+  - Implement logic to determine when detected BPM is likely double-time vs actual tempo
+  - Hide alternative tempo display entirely if no valid alternative exists
+  - Ensure tooltip shows correct half-time BPM (72) when main detection shows double-time (144)
+  - Test with various hip-hop instrumentals to validate detection accuracy
+  - _Requirements: 2.4, 3.4_
+
+- [ ] 26. Improve file upload progress bar smoothness and accuracy
+  - Fix progress bar that stops moving during file loading and jumps at the end
+  - Implement smoother progress updates during file reading and audio decoding phases
+  - Add more granular progress tracking for large file processing
+  - Ensure progress bar moves continuously rather than in discrete jumps
+  - Improve user experience with realistic progress indication throughout upload process
+  - Test with various file sizes to ensure consistent smooth progress behavior
+  - _Requirements: 3.2, 3.3, 4.4_
+
+- [ ] 27. Update README with comprehensive documentation
   - Create detailed README.md with project overview and feature description
   - Add installation and setup instructions for development
   - Document supported audio formats and file size limits
