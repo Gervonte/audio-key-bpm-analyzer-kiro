@@ -23,7 +23,7 @@ import { useFileUpload } from './hooks/useFileUpload'
 import { useAudioProcessor } from './hooks/useAudioProcessor'
 import { useAudioProcessingRetry } from './hooks/useRetry'
 import { getDebugConfig } from './utils/debugMode'
-import type { AppState } from './types'
+import type { AppState, AnalysisResult } from './types'
 
 // Processing stages for better state management
 type ProcessingStage = 'idle' | 'loading' | 'analyzing' | 'complete' | 'error'
@@ -58,7 +58,7 @@ function App() {
 
   // Hooks
   const { loadAudioFile, createAudioFileObject } = useFileUpload()
-  const { processAudio, isProcessing, progress, error: processingError, resetState } = useAudioProcessor({
+  const { processAudio, isProcessing, error: processingError, resetState } = useAudioProcessor({
     enableCaching: debugConfig.enableCaching
   })
 
@@ -155,8 +155,7 @@ function App() {
         setProcessingStage('analyzing')
         console.log('Audio loaded successfully, starting analysis...')
 
-        // Start the real analysis in the background
-        const analysisPromise = executeAudioProcessing(buffer, debugConfig.enableCaching ? file : undefined)
+        // Start the real analysis in the background (will be called in Promise.all below)
 
         // Simulate smooth progress from 35% to 90% over ~400ms
         const simulateAnalysisProgress = async () => {
@@ -169,7 +168,17 @@ function App() {
         // Run simulated progress and real analysis in parallel
         try {
           const [result] = await Promise.all([
-            analysisPromise,
+            executeAudioProcessing(buffer, debugConfig.enableCaching ? file : undefined, (partialResult: Partial<AnalysisResult>) => {
+              // Show partial results as they become available
+              console.log('Partial result received:', partialResult)
+              setAppState(prev => ({
+                ...prev,
+                analysisResult: {
+                  ...prev.analysisResult,
+                  ...partialResult
+                } as AnalysisResult
+              }))
+            }),
             simulateAnalysisProgress()
           ])
 
@@ -412,10 +421,6 @@ function App() {
                     isLoading={isLoadingFile}
                     progress={appState.isProcessing ? appState.progress / 100 : undefined}
                     error={appState.error || undefined}
-                    onWaveformProgress={() => {
-                      // Waveform progress is now handled by simulated progress above
-                      // The real waveform generation happens asynchronously but doesn't affect the progress bar
-                    }}
                   />
                 </Box>
 
@@ -426,6 +431,7 @@ function App() {
                 <Box w="100%" maxW={contentMaxW}>
                   <ResultsDisplay
                     analysisResult={appState.analysisResult || undefined}
+                    audioBuffer={appState.audioBuffer || undefined}
                     isLoading={appState.isProcessing || isRetryingProcessing}
                     error={appState.error || undefined}
                     onReset={handleReset}

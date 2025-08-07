@@ -6,7 +6,7 @@ import type { AnalysisResult } from '../types'
 import { AudioProcessor } from '../utils/audioProcessor'
 
 export interface UseAudioProcessorResult {
-  processAudio: (audioBuffer: AudioBuffer, file?: File) => Promise<AnalysisResult>
+  processAudio: (audioBuffer: AudioBuffer, file?: File, onPartialResult?: (partialResult: Partial<AnalysisResult>) => void) => Promise<AnalysisResult>
   isProcessing: boolean
   progress: number
   error: string | null
@@ -62,7 +62,7 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
     resetState()
   }, [resetState])
 
-  const processAudio = useCallback(async (audioBuffer: AudioBuffer, file?: File): Promise<AnalysisResult> => {
+  const processAudio = useCallback(async (audioBuffer: AudioBuffer, file?: File, onPartialResult?: (partialResult: Partial<AnalysisResult>) => void): Promise<AnalysisResult> => {
     if (!processorRef.current) {
       throw new Error('Audio processor not initialized')
     }
@@ -103,6 +103,7 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
       const processingPromise = processorRef.current.processAudio(audioBuffer, {
         timeoutMs,
         onProgress,
+        onPartialResult,
         file,
         enableCaching
       })

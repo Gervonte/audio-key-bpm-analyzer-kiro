@@ -9,6 +9,7 @@ import { memoryManager } from './memoryManager'
 export interface AudioProcessorOptions {
   timeoutMs?: number
   onProgress?: (progress: number) => void
+  onPartialResult?: (partialResult: Partial<AnalysisResult>) => void
   file?: File // For caching purposes
   enableCaching?: boolean
 }
@@ -78,7 +79,7 @@ export class AudioProcessor {
       })
 
       // Process audio with progress tracking
-      const analysisPromise = this.performAnalysis(audioBuffer, onProgress)
+      const analysisPromise = this.performAnalysis(audioBuffer, onProgress, options.onPartialResult)
 
       // Race between analysis and timeout
       const result = await Promise.race([analysisPromise, timeoutPromise])
@@ -225,7 +226,8 @@ export class AudioProcessor {
    */
   private async performAnalysis(
     audioBuffer: AudioBuffer,
-    onProgress?: (progress: number) => void
+    onProgress?: (progress: number) => void,
+    onPartialResult?: (partialResult: Partial<AnalysisResult>) => void
   ): Promise<Omit<AnalysisResult, 'processingTime'>> {
     // Normalize audio first
     console.log('AudioProcessor: Starting analysis, calling onProgress(10)')
@@ -240,11 +242,33 @@ export class AudioProcessor {
     console.log('AudioProcessor: Normalization complete, calling onProgress(20)')
     onProgress?.(20)
 
-    // Run key and BPM detection in parallel for better performance
-    const [keyResult, bpmResult] = await Promise.all([
-      this.detectKeyWithProgress(normalizedBuffer, onProgress, 20, 60),
-      this.detectBPMWithProgress(normalizedBuffer, onProgress, 60, 90)
-    ])
+    // Run key and BPM detection separately to show partial results
+    let keyResult: KeyResult | undefined
+
+    // Start both detections in parallel but handle results as they complete
+    const keyPromise = this.detectKeyWithProgress(normalizedBuffer, onProgress, 20, 60).then(result => {
+      keyResult = result
+      // Show partial result with just the key
+      onPartialResult?.({ key: result })
+      return result
+    })
+
+    const bpmPromise = this.detectBPMWithProgress(normalizedBuffer, onProgress, 60, 90).then(result => {
+      // Show partial result with just the BPM (or both if key is already done)
+      onPartialResult?.({ 
+        key: keyResult,
+        bpm: result,
+        confidence: keyResult ? {
+          key: keyResult.confidence,
+          bpm: result.confidence,
+          overall: (keyResult.confidence + result.confidence) / 2
+        } : undefined
+      })
+      return result
+    })
+
+    // Wait for both to complete
+    const [finalKeyResult, finalBpmResult] = await Promise.all([keyPromise, bpmPromise])
 
     // Check for cancellation after detection
     if (this.abortController?.signal.aborted) {
@@ -255,16 +279,16 @@ export class AudioProcessor {
 
     // Calculate overall confidence
     const confidence: ConfidenceScores = {
-      key: keyResult.confidence,
-      bpm: bpmResult.confidence,
-      overall: (keyResult.confidence + bpmResult.confidence) / 2
+      key: finalKeyResult.confidence,
+      bpm: finalBpmResult.confidence,
+      overall: (finalKeyResult.confidence + finalBpmResult.confidence) / 2
     }
 
     onProgress?.(100)
 
     return {
-      key: keyResult,
-      bpm: bpmResult,
+      key: finalKeyResult,
+      bpm: finalBpmResult,
       confidence
     }
   }

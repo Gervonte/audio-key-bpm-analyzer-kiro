@@ -56,7 +56,6 @@ export const useFileUpload = (): UseFileUploadReturn => {
     setError(null)
 
     let audioContext: AudioContext | null = null
-    let progressInterval: number | null = null
 
     // Simple progress tracking without complex animations
     let currentProgress = 0
