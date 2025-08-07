@@ -14,13 +14,15 @@ interface WaveformDisplayProps {
   isLoading?: boolean
   progress?: number
   error?: string
+  onWaveformProgress?: (progress: number) => void
 }
 
 export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
   audioBuffer,
   isLoading = false,
   progress,
-  error
+  error,
+  onWaveformProgress
 }) => {
   const { generateWaveformData, drawWaveform, isGenerating } = useWaveform()
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -37,11 +39,11 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
         const viewportHeight = window.innerHeight
         const isMobile = viewportWidth <= 768
         const isTablet = viewportWidth > 768 && viewportWidth <= 1024
-        
+
         // Mobile-first responsive sizing
         let width: number
         let height: number
-        
+
         if (isMobile) {
           // Mobile: Use most of the available width with padding
           const padding = 32 // 16px on each side
@@ -58,15 +60,15 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
           width = Math.max(600, Math.min(containerWidth - padding, 1000))
           height = Math.max(150, Math.min(width * 0.25, 250))
         }
-        
-        console.log('Canvas sizing:', { 
-          containerWidth, 
-          viewportWidth, 
+
+        console.log('Canvas sizing:', {
+          containerWidth,
+          viewportWidth,
           viewportHeight,
           isMobile,
           isTablet,
-          width, 
-          height 
+          width,
+          height
         })
         setCanvasSize({ width, height })
       }
@@ -74,11 +76,11 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
 
     // Use a small delay to ensure the container is properly rendered
     const timeoutId = setTimeout(updateCanvasSize, 100)
-    
+
     updateCanvasSize()
     window.addEventListener('resize', updateCanvasSize)
     window.addEventListener('orientationchange', updateCanvasSize) // Mobile orientation changes
-    
+
     return () => {
       clearTimeout(timeoutId)
       window.removeEventListener('resize', updateCanvasSize)
@@ -90,6 +92,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
   useEffect(() => {
     if (audioBuffer && !isLoading) {
       try {
+        // Generate waveform data (progress is now handled by simulated progress in App component)
         const data = generateWaveformData(audioBuffer)
         setWaveformData(data)
       } catch (err) {
@@ -99,7 +102,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
     } else {
       setWaveformData(null)
     }
-  }, [audioBuffer, isLoading, generateWaveformData])
+  }, [audioBuffer, isLoading, generateWaveformData, onWaveformProgress])
 
   // Draw waveform when data or progress changes
   useEffect(() => {
@@ -107,15 +110,15 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
       // Set canvas size
       const canvas = canvasRef.current
       const { width, height } = canvasSize
-      
+
       // Set canvas size directly without DPI scaling to fix the 2x size issue
       canvas.width = width
       canvas.height = height
-      
+
       // Set CSS size to match canvas size
       canvas.style.width = `${width}px`
       canvas.style.height = `${height}px`
-      
+
       drawWaveform(canvas, waveformData, progress)
     }
   }, [waveformData, progress, canvasSize, drawWaveform, isGenerating])
@@ -198,20 +201,20 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
         {/* Waveform info - responsive layout */}
         <Box>
           {/* Desktop: Single line */}
-          <Text 
-            fontSize="sm" 
-            color="gray.600" 
+          <Text
+            fontSize="sm"
+            color="gray.600"
             display={{ base: 'none', md: 'block' }}
           >
-            Duration: {Math.round(waveformData.duration)}s | 
-            Sample Rate: {waveformData.sampleRate}Hz | 
+            Duration: {Math.round(waveformData.duration)}s |
+            Sample Rate: {waveformData.sampleRate}Hz |
             Channels: {waveformData.channels}
           </Text>
-          
+
           {/* Mobile: Stacked layout */}
-          <VStack 
-            gap={1} 
-            align="start" 
+          <VStack
+            gap={1}
+            align="start"
             display={{ base: 'flex', md: 'none' }}
           >
             <Text fontSize="xs" color="gray.600">
@@ -255,7 +258,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
               background: 'transparent'
             }}
           />
-          
+
           {/* Progress overlay */}
           {progress !== undefined && progress > 0 && (
             <>
@@ -288,7 +291,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
                   transition="left 0.3s ease"
                 />
               </Box>
-              
+
               {/* Progress text overlay */}
               <Box
                 position="absolute"

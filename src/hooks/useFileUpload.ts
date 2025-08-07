@@ -56,6 +56,14 @@ export const useFileUpload = (): UseFileUploadReturn => {
     setError(null)
 
     let audioContext: AudioContext | null = null
+    let progressInterval: number | null = null
+
+    // Simple progress tracking without complex animations
+    let currentProgress = 0
+    const updateProgress = (targetProgress: number) => {
+      currentProgress = targetProgress
+      onProgress?.(Math.max(0, Math.min(100, currentProgress)))
+    }
 
     try {
       // Validate file first
@@ -63,6 +71,9 @@ export const useFileUpload = (): UseFileUploadReturn => {
       if (!validation.isValid) {
         throw new Error(validation.error || 'Invalid file')
       }
+
+      // Initial progress
+      updateProgress(2)
 
       // Check memory before loading
       const estimatedMemory = file.size * 2 // Rough estimate: file size + decoded buffer
@@ -77,12 +88,16 @@ export const useFileUpload = (): UseFileUploadReturn => {
         }
       }
 
+      updateProgress(5)
+
       // Create audio context with proper error handling
       try {
         audioContext = createAudioContext()
       } catch (err) {
         throw new Error('Failed to create audio context. Your browser may not support Web Audio API.')
       }
+
+      updateProgress(8)
 
       // Use progressive loading for large files
       console.log('Starting to read file:', file.name, 'Size:', file.size)
@@ -93,16 +108,17 @@ export const useFileUpload = (): UseFileUploadReturn => {
           throw new Error('File is no longer accessible or is empty')
         }
 
-        // Use progressive loading with progress tracking
+        // Use progressive loading with smooth progress tracking
         arrayBuffer = await loadLargeFile(file, {
-          onProgress: (progress) => {
-            // File loading is 0-50% of total progress
-            onProgress?.(progress * 0.5)
+          onProgress: (fileProgress) => {
+            // File loading is 8-25% of total progress (reduced to leave room for analysis)
+            const targetProgress = 8 + (fileProgress * 0.17)
+            updateProgress(targetProgress)
           }
         })
         
         console.log('File read successfully, buffer size:', arrayBuffer.byteLength)
-        onProgress?.(50) // File loading complete
+        updateProgress(25) // File loading complete
       } catch (fileError) {
         console.error('File reading error:', fileError)
         if (fileError instanceof Error) {
@@ -123,15 +139,27 @@ export const useFileUpload = (): UseFileUploadReturn => {
         throw new Error('File appears to be empty or corrupted')
       }
 
-      // Decode audio data with better error handling
+      // Decode audio data with better error handling and progress tracking
       console.log('Starting audio decoding...')
-      onProgress?.(60) // Decoding started
+      updateProgress(27) // Decoding preparation
       
       let audioBuffer: AudioBuffer
       try {
+        // Simple progress updates during decoding
+        const decodeProgressInterval = setInterval(() => {
+          if (currentProgress < 30) {
+            currentProgress += 0.5
+            onProgress?.(currentProgress)
+          }
+        }, 100)
+
         audioBuffer = await audioContext.decodeAudioData(arrayBuffer)
+        
+        // Clear decode progress interval
+        clearInterval(decodeProgressInterval)
+        
         console.log('Audio decoded successfully, duration:', audioBuffer.duration)
-        onProgress?.(90) // Decoding complete
+        updateProgress(30) // Decoding complete
       } catch (decodeError) {
         const error = decodeError as Error
 
@@ -161,7 +189,8 @@ export const useFileUpload = (): UseFileUploadReturn => {
         throw new Error(bufferValidation.error || 'Invalid audio data')
       }
 
-      onProgress?.(100) // Complete
+      // File loading and decoding complete - ready for waveform generation
+      updateProgress(30) // File loading complete, leaving room for waveform and analysis
 
       // Return the raw audio buffer - preprocessing will be done later in AudioProcessor
       // to match the essentia.js web demo exactly (mono + 16kHz)

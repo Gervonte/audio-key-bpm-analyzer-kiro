@@ -1,6 +1,7 @@
 // React hook for coordinated audio processing using AudioProcessor
 
 import { useState, useCallback, useRef, useEffect } from 'react'
+import { flushSync } from 'react-dom'
 import type { AnalysisResult } from '../types'
 import { AudioProcessor } from '../utils/audioProcessor'
 
@@ -20,18 +21,18 @@ export interface UseAudioProcessorOptions {
 
 export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAudioProcessorResult {
   const { timeoutMs = 30000, enableCaching = true } = options
-  
+
   const [isProcessing, setIsProcessing] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
-  
+
   const processorRef = useRef<AudioProcessor | null>(null)
   const timeoutRef = useRef<number | null>(null)
 
   // Initialize processor
   useEffect(() => {
     processorRef.current = new AudioProcessor()
-    
+
     return () => {
       // Cleanup on unmount
       if (processorRef.current) {
@@ -47,7 +48,7 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
     setIsProcessing(false)
     setProgress(0)
     setError(null)
-    
+
     if (timeoutRef.current) {
       clearTimeout(timeoutRef.current)
       timeoutRef.current = null
@@ -72,9 +73,23 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
     setError(null)
 
     try {
-      // Set up progress tracking
+      // Set up progress tracking with throttling for smoother updates
+      let lastProgressUpdate = 0
       const onProgress = (progressValue: number) => {
-        setProgress(Math.min(100, Math.max(0, progressValue)))
+        const clampedProgress = Math.min(100, Math.max(0, progressValue))
+        const now = Date.now()
+
+        // Throttle progress updates to at most every 300ms for better visibility
+        if (now - lastProgressUpdate >= 300 || clampedProgress === 100) {
+          console.log('AudioProcessor progress:', progressValue, '-> setting to:', clampedProgress)
+
+          // Use flushSync to force immediate state update and re-render
+          flushSync(() => {
+            setProgress(clampedProgress)
+          })
+
+          lastProgressUpdate = now
+        }
       }
 
       // Set up timeout handling
@@ -110,7 +125,7 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
     } catch (error) {
       // Handle different types of errors with more specific messages
       let errorMessage = 'Audio processing failed'
-      
+
       if (error instanceof Error) {
         if (error.message.includes('timed out') || error.message.includes('timeout')) {
           errorMessage = 'Audio processing timed out after 30 seconds. Please try with a shorter audio file (under 5 minutes) or a less complex track.'
@@ -145,6 +160,11 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
       throw new Error(errorMessage)
     }
   }, [timeoutMs, enableCaching, resetState])
+
+  // Debug: Log progress changes
+  useEffect(() => {
+    console.log('useAudioProcessor state changed:', { isProcessing, progress, error })
+  }, [isProcessing, progress, error])
 
   return {
     processAudio,

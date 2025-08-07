@@ -88,15 +88,15 @@ function App() {
     }
   }, [])
 
-  // Update app state when processing state changes
+  // Update app state when processing state changes (but not progress during analysis)
   useEffect(() => {
     setAppState(prev => ({
       ...prev,
       isProcessing,
-      progress,
+      // Don't update progress during analysis - it's handled by simulated progress
       error: processingError
     }))
-  }, [isProcessing, progress, processingError])
+  }, [isProcessing, processingError])
 
 
 
@@ -121,34 +121,62 @@ function App() {
     resetState()
 
     try {
-      // Load the audio file and create AudioBuffer with optional progress tracking
-      const buffer = await loadAudioFile(file, debugConfig.enableProgressiveLoading ? (loadProgress) => {
-        // File loading is 0-50% of total progress
+      // Load the audio file and create AudioBuffer with enhanced progress tracking
+      const buffer = await loadAudioFile(file, (loadProgress) => {
+        // File loading progress (0-30%)
+        const scaledProgress = loadProgress * 0.3
         setAppState(prev => ({
           ...prev,
-          progress: loadProgress * 0.5
+          progress: scaledProgress
         }))
-      } : undefined)
+      })
       audioBufferRef.current = buffer
 
       // Create AudioFile object with metadata
       const audioFile = createAudioFileObject(file, buffer)
 
       if (audioFile) {
-        // Update centralized state
+        // Update centralized state - file loading complete at 30%
         setAppState(prev => ({
           ...prev,
           currentFile: audioFile,
-          audioBuffer: buffer
+          audioBuffer: buffer,
+          progress: 30 // File loading complete
         }))
+
+        // Simulate waveform generation progress (30-35%)
+        // The actual waveform generation happens asynchronously in WaveformDisplay
+        for (let i = 30; i <= 35; i += 0.5) {
+          setAppState(prev => ({ ...prev, progress: i }))
+          await new Promise(resolve => setTimeout(resolve, 50)) // Small delay to show progress
+        }
+
+        // Start analysis phase with simulated smooth progress
         setProcessingStage('analyzing')
         console.log('Audio loaded successfully, starting analysis...')
 
-        // Start audio analysis with retry capability and optional caching
+        // Start the real analysis in the background
+        const analysisPromise = executeAudioProcessing(buffer, debugConfig.enableCaching ? file : undefined)
+
+        // Simulate smooth progress from 35% to 90% over ~400ms
+        const simulateAnalysisProgress = async () => {
+          for (let progress = 35; progress <= 90; progress += 10) {
+            setAppState(prev => ({ ...prev, progress }))
+            await new Promise(resolve => setTimeout(resolve, 60)) // 60ms per 10% = ~400ms total
+          }
+        }
+
+        // Run simulated progress and real analysis in parallel
         try {
-          const result = await executeAudioProcessing(buffer, debugConfig.enableCaching ? file : undefined)
+          const [result] = await Promise.all([
+            analysisPromise,
+            simulateAnalysisProgress()
+          ])
+
+          // Complete the progress
           setAppState(prev => ({
             ...prev,
+            progress: 100,
             analysisResult: result
           }))
           setProcessingStage('complete')
@@ -244,7 +272,9 @@ function App() {
         <Box>
           <HStack justify="space-between" mb={2}>
             <Text fontSize="sm" color="gray.600">
-              {processingStage === 'loading' && 'Loading audio file...'}
+              {processingStage === 'loading' && appState.progress < 15 && 'Loading audio file...'}
+              {processingStage === 'loading' && appState.progress >= 15 && appState.progress < 30 && 'Decoding audio data...'}
+              {processingStage === 'loading' && appState.progress >= 30 && 'Preparing waveform...'}
               {processingStage === 'analyzing' && (isRetryingProcessing ? 'Retrying analysis...' : 'Analyzing audio...')}
             </Text>
             {currentEstimatedTime && (
@@ -262,15 +292,15 @@ function App() {
             position="relative"
           >
             <Box
-              w={`${processingStage === 'loading' ? 30 : appState.progress}%`}
+              w={`${Math.max(0, Math.min(100, appState.progress))}%`}
               h="100%"
               bg="red.500"
               borderRadius="md"
-              transition="width 0.3s ease"
-              animation={processingStage === 'loading' ? "pulse 2s infinite" : undefined}
+              transition={processingStage === 'analyzing' ? "none" : "width 0.2s linear"} // No transition during analysis for immediate updates
+              minW={appState.progress > 0 ? "2px" : "0"} // Ensure visibility when progress starts
             />
           </Box>
-          {processingStage === 'analyzing' && (
+          {(processingStage === 'loading' || processingStage === 'analyzing') && (
             <Text fontSize="xs" color="gray.500" mt={1} textAlign="center">
               {Math.round(appState.progress)}% complete
             </Text>
@@ -281,7 +311,9 @@ function App() {
           <HStack>
             <Spinner size="sm" />
             <Text fontSize="sm" color="blue.800">
-              {processingStage === 'loading' && 'Preparing audio for analysis...'}
+              {processingStage === 'loading' && appState.progress < 15 && 'Reading audio file...'}
+              {processingStage === 'loading' && appState.progress >= 15 && appState.progress < 30 && 'Decoding audio data...'}
+              {processingStage === 'loading' && appState.progress >= 30 && 'Generating waveform display...'}
               {processingStage === 'analyzing' && (isRetryingProcessing ? 'Retrying key and BPM detection...' : 'Detecting key and BPM patterns...')}
             </Text>
           </HStack>
@@ -380,6 +412,10 @@ function App() {
                     isLoading={isLoadingFile}
                     progress={appState.isProcessing ? appState.progress / 100 : undefined}
                     error={appState.error || undefined}
+                    onWaveformProgress={() => {
+                      // Waveform progress is now handled by simulated progress above
+                      // The real waveform generation happens asynchronously but doesn't affect the progress bar
+                    }}
                   />
                 </Box>
 

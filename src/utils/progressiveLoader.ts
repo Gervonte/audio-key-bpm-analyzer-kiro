@@ -80,7 +80,7 @@ export class ProgressiveLoader {
   }
 
   /**
-   * Load all chunks progressively
+   * Load all chunks progressively with enhanced progress tracking
    */
   async loadAll(): Promise<ArrayBuffer> {
     this.abortController = new AbortController()
@@ -89,6 +89,7 @@ export class ProgressiveLoader {
       // Load chunks in batches to avoid memory pressure
       const batchSize = this.maxConcurrentChunks
       const totalChunks = this.chunks.length
+      let loadedChunks = 0
       
       for (let i = 0; i < totalChunks; i += batchSize) {
         const batch = this.chunks.slice(i, Math.min(i + batchSize, totalChunks))
@@ -100,16 +101,31 @@ export class ProgressiveLoader {
           await new Promise(resolve => setTimeout(resolve, 100))
         }
         
-        // Load batch concurrently
-        await Promise.all(batch.map(chunk => this.loadChunk(chunk)))
+        // Load batch with individual chunk progress tracking
+        const batchPromises = batch.map(async (chunk) => {
+          const result = await this.loadChunk(chunk)
+          loadedChunks++
+          
+          // Update progress more frequently for smoother experience
+          const progress = Math.min(95, (loadedChunks / totalChunks) * 95) // Reserve 5% for combining
+          this.onProgress?.(progress)
+          
+          return result
+        })
         
-        // Update progress
-        const progress = Math.min(100, ((i + batchSize) / totalChunks) * 100)
-        this.onProgress?.(progress)
+        await Promise.all(batchPromises)
       }
       
+      // Update progress for combining phase
+      this.onProgress?.(98)
+      
       // Combine all chunks into single ArrayBuffer
-      return this.combineChunks()
+      const result = this.combineChunks()
+      
+      // Final progress
+      this.onProgress?.(100)
+      
+      return result
       
     } catch (error) {
       this.cleanup()
@@ -246,17 +262,54 @@ export class ProgressiveLoader {
 }
 
 /**
- * Utility function to load large files progressively
+ * Utility function to load large files progressively with enhanced progress tracking
  */
 export async function loadLargeFile(
   file: File,
   options: ProgressiveLoadOptions = {}
 ): Promise<ArrayBuffer> {
-  // For small files, use regular loading
-  const smallFileThreshold = 50 * 1024 * 1024 // 50MB
+  const { onProgress } = options
+  
+  // For small files, use regular loading with simulated progress
+  const smallFileThreshold = 10 * 1024 * 1024 // 10MB (reduced threshold for better progress tracking)
   
   if (file.size <= smallFileThreshold) {
-    return await file.arrayBuffer()
+    // Simulate progress for small files to provide smooth UX
+    let progressInterval: number | null = null
+    let currentProgress = 0
+    
+    if (onProgress) {
+      const startTime = Date.now()
+      const estimatedTime = Math.max(200, Math.min(1000, file.size / (1024 * 1024) * 100)) // 100ms per MB, min 200ms, max 1s
+      
+      progressInterval = setInterval(() => {
+        const elapsed = Date.now() - startTime
+        const progress = Math.min((elapsed / estimatedTime) * 90, 90) // Cap at 90% until actual completion
+        
+        if (progress > currentProgress) {
+          currentProgress = progress
+          onProgress(progress)
+        }
+      }, 16) // ~60fps updates
+    }
+    
+    try {
+      const result = await file.arrayBuffer()
+      
+      if (progressInterval) {
+        clearInterval(progressInterval)
+      }
+      
+      // Complete progress
+      onProgress?.(100)
+      
+      return result
+    } catch (error) {
+      if (progressInterval) {
+        clearInterval(progressInterval)
+      }
+      throw error
+    }
   }
   
   // Use progressive loading for large files

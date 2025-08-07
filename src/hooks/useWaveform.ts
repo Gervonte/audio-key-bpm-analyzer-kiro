@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react'
 import type { WaveformData } from '../types'
 
 interface UseWaveformReturn {
-  generateWaveformData: (audioBuffer: AudioBuffer) => WaveformData
+  generateWaveformData: (audioBuffer: AudioBuffer, onProgress?: (progress: number) => void) => WaveformData
   drawWaveform: (canvas: HTMLCanvasElement, data: WaveformData, progress?: number) => void
   canvasRef: React.RefObject<HTMLCanvasElement | null>
   isGenerating: boolean
@@ -12,7 +12,10 @@ export const useWaveform = (): UseWaveformReturn => {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const generateWaveformData = useCallback((audioBuffer: AudioBuffer): WaveformData => {
+  const generateWaveformData = useCallback((
+    audioBuffer: AudioBuffer, 
+    onProgress?: (progress: number) => void
+  ): WaveformData => {
     setIsGenerating(true)
 
     try {
@@ -28,9 +31,11 @@ export const useWaveform = (): UseWaveformReturn => {
       const samplesPerPeak = Math.floor(samples / targetPeaks)
 
       const peaks: number[] = []
+      const progressUpdateInterval = Math.max(1, Math.floor(targetPeaks / 20)) // Update progress 20 times
 
       // Generate peaks by finding the maximum absolute value in each segment
-      for (let i = 0; i < samples; i += samplesPerPeak) {
+      for (let peakIndex = 0; peakIndex < targetPeaks; peakIndex++) {
+        const i = peakIndex * samplesPerPeak
         let peak = 0
         const end = Math.min(i + samplesPerPeak, samples)
 
@@ -42,7 +47,16 @@ export const useWaveform = (): UseWaveformReturn => {
         }
 
         peaks.push(peak)
+
+        // Update progress periodically
+        if (onProgress && peakIndex % progressUpdateInterval === 0) {
+          const progress = (peakIndex / targetPeaks) * 100
+          onProgress(progress)
+        }
       }
+
+      // Final progress update
+      onProgress?.(100)
 
       return {
         peaks,

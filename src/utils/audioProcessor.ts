@@ -51,10 +51,10 @@ export class AudioProcessor {
     if (!memoryManager.hasEnoughMemoryForProcessing(estimatedMemory)) {
       // Try to free up memory
       memoryManager.forceGarbageCollection()
-      
+
       // Wait a bit and check again
       await new Promise(resolve => setTimeout(resolve, 500))
-      
+
       if (!memoryManager.hasEnoughMemoryForProcessing(estimatedMemory)) {
         throw new Error('Not enough memory to process this audio file. Try closing other browser tabs or using a smaller audio file.')
       }
@@ -102,7 +102,7 @@ export class AudioProcessor {
     } catch (error) {
       // Clean up on error
       this.cleanup()
-      
+
       if (error instanceof Error) {
         throw error
       }
@@ -146,17 +146,17 @@ export class AudioProcessor {
   normalizeAudio(audioBuffer: AudioBuffer): AudioBuffer {
     // First, convert to mono using the same algorithm as the web demo
     const monoSignal = this.monomix(audioBuffer)
-    
+
     // Then downsample to 16kHz using the same algorithm as the web demo
     const downsampledSignal = this.downsampleArray(monoSignal, audioBuffer.sampleRate, 16000)
-    
+
     // Create a new AudioBuffer with the processed audio
     const processedBuffer = new AudioBuffer({
       numberOfChannels: 1, // Mono
       length: downsampledSignal.length,
       sampleRate: 16000 // 16kHz as per web demo
     })
-    
+
     // Copy the processed signal to the buffer
     const channelData = processedBuffer.getChannelData(0)
     for (let i = 0; i < downsampledSignal.length; i++) {
@@ -171,12 +171,12 @@ export class AudioProcessor {
    */
   private monomix(buffer: AudioBuffer): Float32Array {
     let monoAudio: Float32Array
-    
+
     if (buffer.numberOfChannels > 1) {
       const leftCh = buffer.getChannelData(0)
       const rightCh = buffer.getChannelData(1)
       monoAudio = new Float32Array(leftCh.length)
-      
+
       // Mix down to mono: 0.5 * (left + right)
       for (let i = 0; i < leftCh.length; i++) {
         monoAudio[i] = 0.5 * (leftCh[i] + rightCh[i])
@@ -195,7 +195,7 @@ export class AudioProcessor {
     if (sampleRateOut === sampleRateIn) {
       return audioIn
     }
-    
+
     const sampleRateRatio = sampleRateIn / sampleRateOut
     const newLength = Math.round(audioIn.length / sampleRateRatio)
     const result = new Float32Array(newLength)
@@ -206,12 +206,12 @@ export class AudioProcessor {
       const nextOffsetAudioIn = Math.round((offsetResult + 1) * sampleRateRatio)
       let accum = 0
       let count = 0
-      
+
       for (let i = offsetAudioIn; i < nextOffsetAudioIn && i < audioIn.length; i++) {
         accum += audioIn[i]
         count++
       }
-      
+
       result[offsetResult] = accum / count
       offsetResult++
       offsetAudioIn = nextOffsetAudioIn
@@ -228,6 +228,7 @@ export class AudioProcessor {
     onProgress?: (progress: number) => void
   ): Promise<Omit<AnalysisResult, 'processingTime'>> {
     // Normalize audio first
+    console.log('AudioProcessor: Starting analysis, calling onProgress(10)')
     onProgress?.(10)
     const normalizedBuffer = this.normalizeAudio(audioBuffer)
 
@@ -236,6 +237,7 @@ export class AudioProcessor {
       throw new Error('Audio processing was cancelled')
     }
 
+    console.log('AudioProcessor: Normalization complete, calling onProgress(20)')
     onProgress?.(20)
 
     // Run key and BPM detection in parallel for better performance
