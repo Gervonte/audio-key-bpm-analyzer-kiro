@@ -174,17 +174,17 @@
   - Test with various file sizes to ensure consistent smooth progress behavior
   - _Requirements: 3.2, 3.3, 4.4_
 
-- [ ] 23. Implement advanced audio analysis pipeline with HPSS separation and ensemble methods
-  - Implement Harmonic-Percussive Source Separation using essentia.HarmonicPercussiveSeparation
-  - Add pre-filtering with essentia.BandPassFilter (50-8000 Hz) and essentia.PeakNormalizer
-  - Replace single 15% audio slice with multi-slice or energy-based sampling strategy
-  - Implement key extraction on harmonic component using essentia.KeyExtractor across multiple slices
-  - Implement tempo extraction on percussive component using essentia.PercivalBpmEstimator and essentia.RhythmExtractor
-  - Add ensemble aggregation with mode voting for key results and median for BPM results
+- [ ] 23. Implement advanced audio analysis pipeline with ensemble methods and spectral analysis
+  - Add pre-filtering with essentia.BandPass (50-8000 Hz) and essentia.Scale for normalization
+  - Replace single 15% audio slice with multi-slice energy-based sampling strategy across the full track
+  - Implement spectral-based analysis using essentia.SpectralPeaks and essentia.HPCP for enhanced key detection
+  - Use essentia.RhythmExtractor and essentia.OnsetDetection for improved tempo analysis with confidence scoring
+  - Implement ensemble aggregation with mode voting for key results and median for BPM results across multiple slices
+  - Add frequency domain analysis to separate tonal vs rhythmic content using available spectral tools
   - Create A/B evaluation harness with curated test set and ground-truth key/BPM values (debug mode only)
   - Integrate evaluation interface with debug mode system (?debug=true or ?eval=true)
   - Add side-by-side algorithm comparison UI for developers
-  - Implement parameter tuning controls for HPSS frameSize/hopSize, filter cutoffs, and RhythmExtractor thresholds
+  - Implement parameter tuning controls for BandPass cutoffs, slice count, and RhythmExtractor thresholds
   - Add per-track failure analysis and diagnostic logging for iterative improvement (debug mode)
   - Include accuracy metrics display and export functionality for development use
   - _Requirements: 2.1, 2.2, 2.3_
