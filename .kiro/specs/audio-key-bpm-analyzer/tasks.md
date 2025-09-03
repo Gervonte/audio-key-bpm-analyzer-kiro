@@ -227,7 +227,7 @@
   - Add performance considerations and browser compatibility information
   - _Requirements: 1.1, 1.2, 2.1, 3.1, 4.1_
 
-- [ ] 28. Polish app branding and visual identity
+- [X] 28. Polish app branding and visual identity
   - Update HTML title from default Vite template to "Audio Key & BPM Analyzer"
   - Replace default Vite favicon with custom audio analysis icon
   - Create or source appropriate favicon in multiple sizes (16x16, 32x32, 192x192, 512x512)
@@ -236,3 +236,19 @@
   - Ensure consistent branding across all browser interfaces
   - Test favicon display across different browsers and devices
   - _Requirements: 1.1, 3.1, 3.4_
+- [ ] 29. Implement production-ready monitoring, security, and testing infrastructure
+  - Install and configure Sentry for error tracking and performance monitoring with proper DSN setup
+  - Implement React Error Boundary components to catch and report JavaScript errors gracefully
+  - Add Zod validation schemas for all API routes and form inputs with comprehensive error handling
+  - Implement security middleware with proper HTTP headers (HSTS, CSP, X-Frame-Options, CSRF protection)
+  - Configure Content Security Policy (CSP) headers to prevent XSS attacks while allowing audio processing
+  - Set up Upstash Redis-based rate limiting for analyze and upload endpoints to prevent abuse (10 requests/minute)
+  - Integrate Mixpanel analytics with proper user consent management and UTM parameter capture
+  - Refactor Essentia.js processing to use Web Workers with 30-second timeout and graceful fallback algorithms
+  - Create comprehensive Playwright end-to-end test suite covering upload → analyze → result workflow
+  - Add performance monitoring and alerting for critical user journeys and Core Web Vitals
+  - Implement structured error logging with contextual information for effective debugging
+  - Set up automated testing pipeline with GitHub Actions CI/CD integration
+  - Add health check endpoints for monitoring service availability
+  - Implement proper CORS configuration for secure cross-origin requests
+  - _Requirements: 1.5, 2.5, 4.2, 4.3, 4.4, 4.5_
