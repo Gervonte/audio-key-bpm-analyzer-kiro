@@ -1,6 +1,14 @@
 # Audio Key & BPM Analyzer
 
+🎵 **[Try it live →](https://audio-key-bpm-analyzer-kiro.vercel.app/)**
+
 A web application that analyzes hip hop instrumental audio files to automatically detect their musical key and beats per minute (BPM) using advanced audio processing algorithms. Built with React, TypeScript, and essentia.js for accurate, client-side audio analysis.
+
+## 🚀 Live Demo
+
+**[https://audio-key-bpm-analyzer-kiro.vercel.app/](https://audio-key-bpm-analyzer-kiro.vercel.app/)**
+
+Upload your audio files directly in the browser - no registration required! All processing happens locally for complete privacy.
 
 ## Features
 
@@ -29,6 +37,8 @@ A web application that analyzes hip hop instrumental audio files to automaticall
   - framer-motion for smooth animations
 
 ## Installation and Setup
+
+> **Quick Start**: Want to try it immediately? Visit the [live demo](https://audio-key-bpm-analyzer-kiro.vercel.app/) - no installation required!
 
 ### Prerequisites
 
@@ -97,7 +107,7 @@ Enable debug mode by adding `?debug=true` to the URL for additional features:
 - Detailed processing information
 - Performance metrics
 
-Example: `http://localhost:5173/?debug=true`
+Example: `https://audio-key-bpm-analyzer-kiro.vercel.app/?debug=true`
 
 ## Supported Audio Formats and Limits
 
@@ -280,10 +290,38 @@ The application includes comprehensive test coverage:
 - Edge case testing for various audio formats
 
 Run tests with:
+
 ```bash
 npm run test        # Watch mode
 npm run test:run    # Single run
 ```
+
+## Deployment
+
+The application is deployed on Vercel and automatically builds from the main branch. The live version is available at:
+
+**[https://audio-key-bpm-analyzer-kiro.vercel.app/](https://audio-key-bpm-analyzer-kiro.vercel.app/)**
+
+### Deploy Your Own
+
+You can easily deploy your own instance:
+
+1. **Fork this repository**
+2. **Connect to Vercel**:
+   - Go to [vercel.com](https://vercel.com)
+   - Import your forked repository
+   - Vercel will automatically detect the Vite configuration
+3. **Deploy**: Vercel handles the build and deployment automatically
+
+### Build for Production
+
+To build locally:
+
+```bash
+npm run build
+```
+
+The `dist` folder contains all static files ready for deployment to any hosting service.
 
 ## License
 

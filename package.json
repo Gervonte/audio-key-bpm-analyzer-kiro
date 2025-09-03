@@ -1,5 +1,5 @@
 {
-  "name": "instrumentalkey",
+  "name": "audio-key-bpm-analyzer",
   "private": true,
   "version": "0.0.0",
   "type": "module",

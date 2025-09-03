@@ -1,0 +1,17 @@
+{
+  "name": "Audio Key & BPM Analyzer",
+  "short_name": "Audio Analyzer",
+  "description": "Analyze hip hop instrumental audio files to automatically detect musical key and BPM",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#E53E3E",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
