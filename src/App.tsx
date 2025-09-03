@@ -11,6 +11,8 @@ import {
   useBreakpointValue
 } from '@chakra-ui/react'
 
+import { Analytics } from '@vercel/analytics/next'
+
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { FileUpload } from './components/FileUpload'
 import { WaveformDisplay } from './components/WaveformDisplay'
@@ -24,6 +26,8 @@ import { useAudioProcessor } from './hooks/useAudioProcessor'
 import { useAudioProcessingRetry } from './hooks/useRetry'
 import { getDebugConfig } from './utils/debugMode'
 import type { AppState, AnalysisResult } from './types'
+
+
 
 // Processing stages for better state management
 type ProcessingStage = 'idle' | 'loading' | 'analyzing' | 'complete' | 'error'
@@ -466,7 +470,9 @@ function App() {
           </Routes>
         </VStack>
       </Container>
+      <Analytics/>
     </Flex>
+    
   )
 }
 
