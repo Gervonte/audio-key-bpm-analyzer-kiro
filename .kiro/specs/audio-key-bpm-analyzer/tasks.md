@@ -236,19 +236,90 @@
   - Ensure consistent branding across all browser interfaces
   - Test favicon display across different browsers and devices
   - _Requirements: 1.1, 3.1, 3.4_
-- [ ] 29. Implement production-ready monitoring, security, and testing infrastructure
-  - Install and configure Sentry for error tracking and performance monitoring with proper DSN setup
-  - Implement React Error Boundary components to catch and report JavaScript errors gracefully
-  - Add Zod validation schemas for all API routes and form inputs with comprehensive error handling
-  - Implement security middleware with proper HTTP headers (HSTS, CSP, X-Frame-Options, CSRF protection)
-  - Configure Content Security Policy (CSP) headers to prevent XSS attacks while allowing audio processing
-  - Set up Upstash Redis-based rate limiting for analyze and upload endpoints to prevent abuse (10 requests/minute)
-  - Integrate Mixpanel analytics with proper user consent management and UTM parameter capture
-  - Refactor Essentia.js processing to use Web Workers with 30-second timeout and graceful fallback algorithms
-  - Create comprehensive Playwright end-to-end test suite covering upload → analyze → result workflow
-  - Add performance monitoring and alerting for critical user journeys and Core Web Vitals
-  - Implement structured error logging with contextual information for effective debugging
-  - Set up automated testing pipeline with GitHub Actions CI/CD integration
-  - Add health check endpoints for monitoring service availability
+- [ ] 29. Install and configure Sentry for error tracking and performance monitoring
+  - Install @sentry/react and @sentry/vite-plugin packages
+  - Set up Sentry DSN configuration in environment variables
+  - Configure Sentry initialization in main.tsx with proper error boundaries
+  - Add performance monitoring for Core Web Vitals and user interactions
+  - Test error reporting and performance tracking functionality
+  - _Requirements: 4.3, 4.5_
+
+- [ ] 30. Implement React Error Boundary components for graceful error handling
+  - Create ErrorBoundary component to catch JavaScript errors in React components
+  - Add error reporting integration with Sentry for caught errors
+  - Implement fallback UI for when components crash
+  - Add error boundaries around key components (FileUpload, WaveformDisplay, ResultsDisplay)
+  - Test error boundary functionality with intentional errors
+  - _Requirements: 1.5, 4.3_
+
+- [ ] 31. Add Zod validation schemas for form inputs and data validation
+  - Install zod package for runtime type validation
+  - Create validation schemas for file upload inputs (file type, size, format)
+  - Add validation for audio analysis parameters and user inputs
+  - Implement comprehensive error handling for validation failures
+  - Add user-friendly error messages for validation errors
+  - _Requirements: 1.5, 4.1_
+
+- [ ] 32. Implement security headers and Content Security Policy (CSP)
+  - Configure security middleware with proper HTTP headers (HSTS, X-Frame-Options, X-Content-Type-Options)
+  - Set up Content Security Policy headers to prevent XSS attacks
+  - Configure CSP to allow audio processing, Web Workers, and WASM while blocking unsafe content
+  - Add CSRF protection for any form submissions
+  - Test security headers in both development and production environments
+  - _Requirements: 4.3, 4.5_
+
+- [ ] 33. Set up Upstash Redis-based rate limiting for API endpoints
+  - Install @upstash/redis and @upstash/ratelimit packages
+  - Configure Upstash Redis connection with environment variables
+  - Implement rate limiting middleware for analyze and upload endpoints (10 requests/minute per IP)
+  - Add proper error responses for rate limit exceeded scenarios
+  - Test rate limiting functionality with multiple requests
+  - _Requirements: 4.3, 4.5_
+
+- [ ] 34. Integrate Mixpanel analytics with user consent management
+  - Install mixpanel-browser package for client-side analytics
+  - Implement user consent banner for analytics tracking
+  - Set up Mixpanel tracking for key user events (file upload, analysis complete, errors)
+  - Add UTM parameter capture and user journey tracking
+  - Implement privacy-compliant analytics with opt-out functionality
+  - _Requirements: 4.4_
+
+- [ ] 35. Refactor Essentia.js processing to use Web Workers with timeout handling
+  - Move all Essentia.js processing to dedicated Web Workers
+  - Implement 30-second timeout for audio analysis operations
+  - Add graceful fallback algorithms when Essentia.js fails or times out
+  - Ensure Web Workers can be terminated and restarted cleanly
+  - Test worker functionality with large files and edge cases
+  - _Requirements: 2.5, 4.2_
+
+- [ ] 36. Create comprehensive Playwright end-to-end test suite
+  - Install @playwright/test and configure test environment
+  - Create E2E tests covering complete upload → analyze → result workflow
+  - Add tests for error scenarios (invalid files, network failures, timeouts)
+  - Implement tests for mobile responsiveness and touch interactions
+  - Set up test data and fixtures for consistent testing
+  - _Requirements: 4.1, 4.2_
+
+- [ ] 37. Add performance monitoring and Core Web Vitals tracking
+  - Implement performance monitoring for critical user journeys
+  - Add Core Web Vitals tracking (LCP, FID, CLS) with Sentry integration
+  - Set up alerting for performance regressions and slow operations
+  - Monitor audio processing performance and memory usage
+  - Create performance dashboards and reporting
+  - _Requirements: 4.4, 4.5_
+
+- [ ] 38. Implement structured error logging and health check endpoints
+  - Create structured error logging with contextual information for debugging
+  - Implement health check endpoints for monitoring service availability
+  - Add logging for audio processing failures, timeouts, and edge cases
+  - Set up log aggregation and monitoring for production environments
+  - Create automated alerting for critical errors and service downtime
+  - _Requirements: 4.3, 4.5_
+
+- [ ] 39. Set up automated testing pipeline with GitHub Actions CI/CD
+  - Configure GitHub Actions workflow for automated testing on pull requests
+  - Set up continuous integration pipeline running unit tests, E2E tests, and builds
+  - Add automated deployment pipeline for staging and production environments
   - Implement proper CORS configuration for secure cross-origin requests
-  - _Requirements: 1.5, 2.5, 4.2, 4.3, 4.4, 4.5_
+  - Add security scanning and dependency vulnerability checks
+  - _Requirements: 4.3, 4.5_
