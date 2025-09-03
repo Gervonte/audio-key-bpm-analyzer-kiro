@@ -88,7 +88,7 @@ export function useRetry<T>(
         await new Promise<void>((resolve) => {
           timeoutRef.current = setTimeout(() => {
             resolve()
-          }, delay)
+          }, delay) as unknown as number
         })
 
         // Recursive retry

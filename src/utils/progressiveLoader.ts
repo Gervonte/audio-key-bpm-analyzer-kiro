@@ -290,7 +290,7 @@ export async function loadLargeFile(
           currentProgress = progress
           onProgress(progress)
         }
-      }, 16) // ~60fps updates
+      }, 16) as unknown as number // ~60fps updates
     }
     
     try {

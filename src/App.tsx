@@ -15,6 +15,14 @@ import { Analytics } from '@vercel/analytics/react'
 import { SpeedInsights } from '@vercel/speed-insights/react'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
+import { useSentryPerformance } from './hooks/useSentryPerformance'
+import {
+  trackAudioAnalysisPerformance,
+  trackFileUpload,
+  trackAnalysisError,
+  trackUserInteraction,
+  createAnalysisTransaction
+} from './utils/sentryPerformance'
 import { FileUpload } from './components/FileUpload'
 import { WaveformDisplay } from './components/WaveformDisplay'
 import { ResultsDisplay } from './components/ResultsDisplay'
@@ -22,6 +30,7 @@ import { ErrorDisplay } from './components/ErrorDisplay'
 import { MemoryMonitor } from './components/MemoryMonitor'
 import { CacheStats } from './components/CacheStats'
 import { DebugInfo } from './components/DebugInfo'
+import { SentryTest } from './components/SentryTest'
 import { useFileUpload } from './hooks/useFileUpload'
 import { useAudioProcessor } from './hooks/useAudioProcessor'
 import { useAudioProcessingRetry } from './hooks/useRetry'
@@ -34,6 +43,9 @@ import type { AppState, AnalysisResult } from './types'
 type ProcessingStage = 'idle' | 'loading' | 'analyzing' | 'complete' | 'error'
 
 function App() {
+  // Initialize Sentry performance monitoring
+  const sentry = useSentryPerformance()
+
   // Get debug configuration from URL parameters
   const debugConfig = getDebugConfig()
 
@@ -108,6 +120,17 @@ function App() {
   const handleFileSelect = async (file: File) => {
     console.log('Selected file:', file.name, file.size, file.type)
 
+    // Track user interaction
+    trackUserInteraction('file_select', {
+      file_name: file.name,
+      file_size: file.size,
+      file_type: file.type,
+    })
+
+    // Start Sentry transaction for the entire analysis workflow
+    const transaction = createAnalysisTransaction(file.name, file.size)
+    const fileUploadStartTime = performance.now()
+
     // Cleanup previous resources
     cleanupAudioResources()
 
@@ -137,6 +160,14 @@ function App() {
       })
       audioBufferRef.current = buffer
 
+      // Track file upload performance
+      const fileUploadDuration = performance.now() - fileUploadStartTime
+      trackFileUpload(file.size, file.type, fileUploadDuration)
+      trackAudioAnalysisPerformance('file_upload', fileUploadStartTime, {
+        file_size: file.size,
+        file_type: file.type,
+      })
+
       // Create AudioFile object with metadata
       const audioFile = createAudioFileObject(file, buffer)
 
@@ -159,6 +190,13 @@ function App() {
         // Start analysis phase with simulated smooth progress
         setProcessingStage('analyzing')
         console.log('Audio loaded successfully, starting analysis...')
+
+        // Track analysis start
+        trackUserInteraction('analysis_start', {
+          file_name: file.name,
+          file_size: file.size,
+        })
+        const analysisStartTime = performance.now()
 
         // Start the real analysis in the background (will be called in Promise.all below)
 
@@ -195,13 +233,42 @@ function App() {
           }))
           setProcessingStage('complete')
           console.log('Analysis completed:', result)
+
+          // Track successful analysis completion
+          trackAudioAnalysisPerformance('bpm_detection', analysisStartTime, {
+            bpm: result.bpm?.bpm,
+            bpm_confidence: result.bpm?.confidence,
+          })
+          trackAudioAnalysisPerformance('key_detection', analysisStartTime, {
+            key: result.key?.keyName,
+            key_confidence: result.key?.confidence,
+          })
+
+          // Complete the transaction
+          if (transaction && typeof transaction.setStatus === 'function') {
+            transaction.setStatus({ code: 1 }) // OK status
+          }
         } catch (analysisError) {
           console.error('Analysis failed:', analysisError)
           setProcessingStage('error')
+          const errorMessage = analysisError instanceof Error ? analysisError.message : 'Analysis failed'
           setAppState(prev => ({
             ...prev,
-            error: analysisError instanceof Error ? analysisError.message : 'Analysis failed'
+            error: errorMessage
           }))
+
+          // Track analysis error
+          trackAnalysisError('processing_failed', {
+            error_message: errorMessage,
+            file_name: file.name,
+            file_size: file.size,
+          })
+
+          // Report error to Sentry
+          sentry.captureException(analysisError instanceof Error ? analysisError : new Error(errorMessage))
+          if (transaction && typeof transaction.setStatus === 'function') {
+            transaction.setStatus({ code: 2 }) // INTERNAL_ERROR status
+          }
         }
       }
     } catch (err) {
@@ -212,12 +279,30 @@ function App() {
         error: errorMessage
       }))
       console.error('Error loading audio file:', err)
+
+      // Track file upload error
+      if (errorMessage.includes('format')) {
+        trackAnalysisError('unsupported_format', { file_type: file.type })
+      } else if (errorMessage.includes('size')) {
+        trackAnalysisError('file_too_large', { file_size: file.size })
+      } else {
+        trackAnalysisError('processing_failed', { error_message: errorMessage })
+      }
+
+      // Report error to Sentry
+      sentry.captureException(err instanceof Error ? err : new Error(errorMessage))
+      if (transaction && typeof transaction.setStatus === 'function') {
+        transaction.setStatus({ code: 2 }) // INTERNAL_ERROR status
+      }
     } finally {
       setIsLoadingFile(false)
     }
   }
 
   const handleReset = useCallback(() => {
+    // Track user interaction
+    trackUserInteraction('reset')
+
     // Cleanup audio resources before reset
     cleanupAudioResources()
 
@@ -239,6 +324,11 @@ function App() {
   const handleRetryAnalysis = useCallback(async () => {
     if (!canRetryProcessing || !appState.audioBuffer || !appState.currentFile) return
 
+    // Track retry interaction
+    trackUserInteraction('retry', {
+      file_name: appState.currentFile.name,
+    })
+
     setProcessingStage('analyzing')
     setAppState(prev => ({
       ...prev,
@@ -256,13 +346,23 @@ function App() {
       console.log('Retry analysis completed:', result)
     } catch (retryError) {
       console.error('Retry analysis failed:', retryError)
+      const errorMessage = retryError instanceof Error ? retryError.message : 'Retry failed'
       setProcessingStage('error')
       setAppState(prev => ({
         ...prev,
-        error: retryError instanceof Error ? retryError.message : 'Retry failed'
+        error: errorMessage
       }))
+
+      // Track retry error
+      trackAnalysisError('processing_failed', {
+        error_message: errorMessage,
+        is_retry: true,
+      })
+
+      // Report retry error to Sentry
+      sentry.captureException(retryError instanceof Error ? retryError : new Error(errorMessage))
     }
-  }, [canRetryProcessing, appState.audioBuffer, appState.currentFile, retryAudioProcessing])
+  }, [canRetryProcessing, appState.audioBuffer, appState.currentFile, retryAudioProcessing, sentry])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -353,128 +453,135 @@ function App() {
 
   return (
     <>
-    <Flex
-      minH="100vh"
-      w="100vw"
-      bg="white"
-      color="black"
-      direction="column"
-      overflow="auto"
-    >
-      <Container
-        maxW={containerMaxW}
-        w="100%"
-        py={{ base: 4, md: 6 }}
-        px={{ base: 4, md: 6 }}
-        flex="1"
+      <Flex
+        minH="100vh"
+        w="100vw"
+        bg="white"
+        color="black"
+        direction="column"
+        overflow="auto"
       >
-        <VStack gap={{ base: 4, md: 6 }} align="center" h="100%">
-          {/* Header Section */}
-          <VStack gap={3} textAlign="center" w="100%">
-            <Heading
-              as="h1"
-              size={{ base: "2xl", md: "3xl" }}
-              lineHeight="shorter"
-            >
-              Audio Key & BPM Analyzer
-            </Heading>
-            <Heading
-              as="h2"
-              size={{ base: "md", md: "lg" }}
-              color="gray.600"
-              fontWeight="normal"
-              px={{ base: 2, md: 0 }}
-            >
-              Upload your hip hop instrumental to analyze its key and BPM
-            </Heading>
-          </VStack>
+        <Container
+          maxW={containerMaxW}
+          w="100%"
+          py={{ base: 4, md: 6 }}
+          px={{ base: 4, md: 6 }}
+          flex="1"
+        >
+          <VStack gap={{ base: 4, md: 6 }} align="center" h="100%">
+            {/* Header Section */}
+            <VStack gap={3} textAlign="center" w="100%">
+              <Heading
+                as="h1"
+                size={{ base: "2xl", md: "3xl" }}
+                lineHeight="shorter"
+              >
+                Audio Key & BPM Analyzer
+              </Heading>
+              <Heading
+                as="h2"
+                size={{ base: "md", md: "lg" }}
+                color="gray.600"
+                fontWeight="normal"
+                px={{ base: 2, md: 0 }}
+              >
+                Upload your hip hop instrumental to analyze its key and BPM
+              </Heading>
+            </VStack>
 
-          {/* Main Content */}
-          <Routes>
-            <Route path="/" element={
-              <VStack gap={5} align="center" w="100%" flex="1">
-                {/* Debug Info - Only show in debug mode */}
-                <Box w="100%" maxW={contentMaxW}>
-                  <DebugInfo />
-                </Box>
-
-                {/* File Upload Section */}
-                <Box w="100%" maxW={contentMaxW}>
-                  <FileUpload
-                    onFileSelect={handleFileSelect}
-                    isProcessing={isProcessingAny}
-                  />
-                </Box>
-
-                {/* Progress Indicators */}
-                {isProcessingAny && <ProgressIndicator />}
-
-                {/* Error Display */}
-                {appState.error && processingStage === 'error' && (
+            {/* Main Content */}
+            <Routes>
+              <Route path="/" element={
+                <VStack gap={5} align="center" w="100%" flex="1">
+                  {/* Debug Info - Only show in debug mode */}
                   <Box w="100%" maxW={contentMaxW}>
-                    <ErrorDisplay
-                      error={appState.error}
-                      onRetry={canRetryProcessing ? handleRetryAnalysis : undefined}
-                      onDismiss={handleReset}
+                    <DebugInfo />
+                  </Box>
+
+                  {/* Sentry Test Panel - Only show in development */}
+                  {import.meta.env.DEV && (
+                    <Box w="100%" maxW={contentMaxW}>
+                      <SentryTest />
+                    </Box>
+                  )}
+
+                  {/* File Upload Section */}
+                  <Box w="100%" maxW={contentMaxW}>
+                    <FileUpload
+                      onFileSelect={handleFileSelect}
+                      isProcessing={isProcessingAny}
                     />
                   </Box>
-                )}
 
-                {/* Waveform Display */}
-                <Box w="100%" maxW={waveformMaxW}>
-                  <WaveformDisplay
-                    audioBuffer={appState.audioBuffer || undefined}
-                    isLoading={isLoadingFile}
-                    progress={appState.isProcessing ? appState.progress / 100 : undefined}
-                    error={appState.error || undefined}
-                  />
-                </Box>
+                  {/* Progress Indicators */}
+                  {isProcessingAny && <ProgressIndicator />}
 
-                {/* File Information */}
-                <FileInformation />
+                  {/* Error Display */}
+                  {appState.error && processingStage === 'error' && (
+                    <Box w="100%" maxW={contentMaxW}>
+                      <ErrorDisplay
+                        error={appState.error}
+                        onRetry={canRetryProcessing ? handleRetryAnalysis : undefined}
+                        onDismiss={handleReset}
+                      />
+                    </Box>
+                  )}
 
-                {/* Results Display */}
-                <Box w="100%" maxW={contentMaxW}>
-                  <ResultsDisplay
-                    analysisResult={appState.analysisResult || undefined}
-                    audioBuffer={appState.audioBuffer || undefined}
-                    isLoading={appState.isProcessing || isRetryingProcessing}
-                    error={appState.error || undefined}
-                    onReset={handleReset}
-                    onRetry={canRetryProcessing ? handleRetryAnalysis : undefined}
-                  />
-                </Box>
+                  {/* Waveform Display */}
+                  <Box w="100%" maxW={waveformMaxW}>
+                    <WaveformDisplay
+                      audioBuffer={appState.audioBuffer || undefined}
+                      isLoading={isLoadingFile}
+                      progress={appState.isProcessing ? appState.progress / 100 : undefined}
+                      error={appState.error || undefined}
+                    />
+                  </Box>
 
-                {/* Performance Monitoring Section - Only show in debug mode */}
-                {debugConfig.showPerformanceMonitoring && (
-                  <VStack gap={4} w="100%" maxW={contentMaxW}>
-                    <HStack justify="space-between" w="100%">
-                      <Text fontSize="lg" fontWeight="bold" color="gray.700">
-                        Performance Monitoring
-                      </Text>
-                      <Text fontSize="xs" color="gray.500" fontStyle="italic">
-                        Debug Mode: Add ?debug=true to URL
-                      </Text>
-                    </HStack>
+                  {/* File Information */}
+                  <FileInformation />
 
-                    <HStack gap={4} w="100%" align="start" flexWrap="wrap">
-                      <Box flex="1" minW="250px">
-                        <MemoryMonitor showDetails={true} />
-                      </Box>
-                      <Box flex="1" minW="250px">
-                        <CacheStats showControls={true} />
-                      </Box>
-                    </HStack>
-                  </VStack>
-                )}
-              </VStack>
-            } />
-          </Routes>
-        </VStack>
-      </Container>
-    </Flex>
-    <Analytics/>
-    <SpeedInsights/>
+                  {/* Results Display */}
+                  <Box w="100%" maxW={contentMaxW}>
+                    <ResultsDisplay
+                      analysisResult={appState.analysisResult || undefined}
+                      audioBuffer={appState.audioBuffer || undefined}
+                      isLoading={appState.isProcessing || isRetryingProcessing}
+                      error={appState.error || undefined}
+                      onReset={handleReset}
+                      onRetry={canRetryProcessing ? handleRetryAnalysis : undefined}
+                    />
+                  </Box>
+
+                  {/* Performance Monitoring Section - Only show in debug mode */}
+                  {debugConfig.showPerformanceMonitoring && (
+                    <VStack gap={4} w="100%" maxW={contentMaxW}>
+                      <HStack justify="space-between" w="100%">
+                        <Text fontSize="lg" fontWeight="bold" color="gray.700">
+                          Performance Monitoring
+                        </Text>
+                        <Text fontSize="xs" color="gray.500" fontStyle="italic">
+                          Debug Mode: Add ?debug=true to URL
+                        </Text>
+                      </HStack>
+
+                      <HStack gap={4} w="100%" align="start" flexWrap="wrap">
+                        <Box flex="1" minW="250px">
+                          <MemoryMonitor showDetails={true} />
+                        </Box>
+                        <Box flex="1" minW="250px">
+                          <CacheStats showControls={true} />
+                        </Box>
+                      </HStack>
+                    </VStack>
+                  )}
+                </VStack>
+              } />
+            </Routes>
+          </VStack>
+        </Container>
+      </Flex>
+      <Analytics />
+      <SpeedInsights />
     </>
   )
 }

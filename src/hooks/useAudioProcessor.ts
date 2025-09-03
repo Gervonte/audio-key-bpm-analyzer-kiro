@@ -96,7 +96,7 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutRef.current = setTimeout(() => {
           reject(new Error('Audio processing timed out after 30 seconds'))
-        }, timeoutMs)
+        }, timeoutMs) as unknown as number
       })
 
       // Process audio with progress tracking and caching

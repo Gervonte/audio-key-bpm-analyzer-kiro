@@ -67,7 +67,7 @@ export function useBPMDetection(): UseBPMDetectionResult {
                     clearInterval(progressInterval)
                     cancelDetection()
                     reject(new Error('BPM detection timed out after 30 seconds'))
-                }, 30000)
+                }, 30000) as unknown as number
 
                 // Handle worker messages
                 workerRef.current.onmessage = (event: MessageEvent<BPMWorkerResponse>) => {
