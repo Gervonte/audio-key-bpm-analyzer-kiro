@@ -12,6 +12,7 @@ import {
 } from '@chakra-ui/react'
 
 import { Analytics } from '@vercel/analytics/react'
+import { SpeedInsights } from '@vercel/speed-insights/react'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { FileUpload } from './components/FileUpload'
@@ -473,6 +474,7 @@ function App() {
       </Container>
     </Flex>
     <Analytics/>
+    <SpeedInsights/>
     </>
   )
 }
