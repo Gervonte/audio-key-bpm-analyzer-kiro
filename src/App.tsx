@@ -11,7 +11,7 @@ import {
   useBreakpointValue
 } from '@chakra-ui/react'
 
-import { Analytics } from '@vercel/analytics/next'
+import { Analytics } from '@vercel/analytics/react'
 
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { FileUpload } from './components/FileUpload'
@@ -351,6 +351,7 @@ function App() {
   )
 
   return (
+    <>
     <Flex
       minH="100vh"
       w="100vw"
@@ -470,9 +471,9 @@ function App() {
           </Routes>
         </VStack>
       </Container>
-      <Analytics/>
     </Flex>
-    
+    <Analytics/>
+    </>
   )
 }
 
