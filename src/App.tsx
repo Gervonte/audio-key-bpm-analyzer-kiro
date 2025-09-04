@@ -498,12 +498,10 @@ function App() {
                     <DebugInfo />
                   </Box>
 
-                  {/* Sentry Test Panel - Only show in development */}
-                  {import.meta.env.DEV && (
-                    <Box w="100%" maxW={contentMaxW}>
-                      <SentryTest />
-                    </Box>
-                  )}
+                  {/* Sentry Test Panel - Only show in debug mode */}
+                  <Box w="100%" maxW={contentMaxW}>
+                    <SentryTest />
+                  </Box>
 
                   {/* File Upload Section */}
                   <Box w="100%" maxW={contentMaxW}>
