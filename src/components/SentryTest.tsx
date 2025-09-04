@@ -1,13 +1,16 @@
 import { Box, Button, VStack, Text, HStack } from '@chakra-ui/react'
 import * as Sentry from '@sentry/react'
 import { trackAnalysisError } from '../utils/sentryPerformance'
+import { getDebugConfig } from '../utils/debugMode'
 
 /**
  * Test component for Sentry functionality - only visible in debug mode
  */
 export const SentryTest = () => {
-    // Only show when VITE_DEBUG_MODE is explicitly set to 'true'
-    if (import.meta.env.VITE_DEBUG_MODE !== 'true') {
+    const debugConfig = getDebugConfig()
+
+    // Only show when debug mode is enabled
+    if (!debugConfig.isDebugMode) {
         return null
     }
 
