@@ -23,4 +23,11 @@ export default defineConfig({
   build: {
     sourcemap: true, // Enable source maps for Sentry
   },
+  optimizeDeps: {
+    include: ['@chakra-ui/react', '@emotion/react', '@emotion/styled'],
+  },
+  esbuild: {
+    // Suppress sourcemap warnings for node_modules
+    logOverride: { 'this-is-undefined-in-esm': 'silent' },
+  },
 })
