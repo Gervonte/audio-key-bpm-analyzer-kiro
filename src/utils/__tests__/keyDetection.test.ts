@@ -42,7 +42,7 @@ describe('KeyDetector', () => {
   let keyDetector: KeyDetector
 
   beforeEach(() => {
-    keyDetector = new KeyDetector(44100)
+    keyDetector = new KeyDetector()
   })
 
   describe('constructor', () => {
@@ -52,7 +52,7 @@ describe('KeyDetector', () => {
     })
 
     it('should initialize with custom parameters', () => {
-      const detector = new KeyDetector(48000)
+      const detector = new KeyDetector()
       expect(detector).toBeInstanceOf(KeyDetector)
     })
   })

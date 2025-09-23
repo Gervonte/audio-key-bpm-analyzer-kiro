@@ -102,7 +102,7 @@ describe('useAudioProcessor', () => {
             await act(async () => {
                 try {
                     await result.current.processAudio(mockAudioBuffer)
-                } catch (error) {
+                } catch {
                     // Expected error
                 }
             })
@@ -120,7 +120,7 @@ describe('useAudioProcessor', () => {
             await act(async () => {
                 try {
                     await result.current.processAudio(mockAudioBuffer)
-                } catch (error) {
+                } catch {
                     // Expected error
                 }
             })
@@ -136,7 +136,7 @@ describe('useAudioProcessor', () => {
             await act(async () => {
                 try {
                     await result.current.processAudio(mockAudioBuffer)
-                } catch (error) {
+                } catch {
                     // Expected error
                 }
             })
@@ -152,7 +152,7 @@ describe('useAudioProcessor', () => {
             await act(async () => {
                 try {
                     await result.current.processAudio(mockAudioBuffer)
-                } catch (error) {
+                } catch {
                     // Expected error
                 }
             })

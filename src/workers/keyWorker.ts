@@ -37,7 +37,7 @@ self.onmessage = async (event: MessageEvent<KeyWorkerMessage>) => {
 
       // Create or reuse key detector
       if (!keyDetector) {
-        keyDetector = new KeyDetector(audioData.sampleRate)
+        keyDetector = new KeyDetector()
       }
       
       const result = await keyDetector.detectKey(audioBuffer)

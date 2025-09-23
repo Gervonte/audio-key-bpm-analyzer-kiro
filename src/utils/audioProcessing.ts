@@ -8,7 +8,7 @@ export function checkWebAudioSupport(): { isSupported: boolean; error?: string }
     return { isSupported: false, error: 'Web Audio API not available in server environment' }
   }
 
-  if (!window.AudioContext && !(window as any).webkitAudioContext) {
+  if (!window.AudioContext && !(window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext) {
     return { 
       isSupported: false, 
       error: 'Web Audio API not supported in this browser. Please use a modern browser like Chrome, Firefox, Safari, or Edge.' 
@@ -16,10 +16,10 @@ export function checkWebAudioSupport(): { isSupported: boolean; error?: string }
   }
 
   // Check for additional Web Audio API features (skip in test environment)
-  if (typeof globalThis !== 'undefined' && typeof (globalThis as any).process === 'undefined' || 
-      (typeof (globalThis as any).process !== 'undefined' && (globalThis as any).process.env?.NODE_ENV !== 'test')) {
+  if (typeof globalThis !== 'undefined' && typeof (globalThis as unknown as { process?: { env?: { NODE_ENV?: string } } }).process === 'undefined' || 
+      (typeof (globalThis as unknown as { process?: { env?: { NODE_ENV?: string } } }).process !== 'undefined' && (globalThis as unknown as { process?: { env?: { NODE_ENV?: string } } }).process?.env?.NODE_ENV !== 'test')) {
     try {
-      const testContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const testContext = new (window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext!)()
       if (!testContext.createAnalyser || !testContext.decodeAudioData) {
         testContext.close()
         return {
@@ -28,7 +28,7 @@ export function checkWebAudioSupport(): { isSupported: boolean; error?: string }
         }
       }
       testContext.close()
-    } catch (error) {
+    } catch {
       return {
         isSupported: false,
         error: 'Failed to initialize Web Audio API. Please check your browser settings.'
@@ -43,7 +43,7 @@ export function checkWebAudioSupport(): { isSupported: boolean; error?: string }
  * Creates an AudioContext with proper browser compatibility
  */
 export function createAudioContext(): AudioContext {
-  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+  const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext!
   return new AudioContextClass()
 }
 

@@ -35,9 +35,7 @@ import { useFileUpload } from './hooks/useFileUpload'
 import { useAudioProcessor } from './hooks/useAudioProcessor'
 import { useAudioProcessingRetry } from './hooks/useRetry'
 import { getDebugConfig } from './utils/debugMode'
-import type { AppState, AnalysisResult } from './types'
-
-
+import type { AppState, AnalysisResult, FileSelection, DemoSample, AudioFile } from './types'
 
 // Processing stages for better state management
 type ProcessingStage = 'idle' | 'loading' | 'analyzing' | 'complete' | 'error'
@@ -85,7 +83,7 @@ function App() {
     retry: retryAudioProcessing,
     canRetry: canRetryProcessing,
     isRetrying: isRetryingProcessing
-  } = useAudioProcessingRetry(processAudio)
+  } = useAudioProcessingRetry(processAudio as (...args: unknown[]) => Promise<AnalysisResult>)
 
   // Memory cleanup function
   const cleanupAudioResources = useCallback(() => {
@@ -117,18 +115,24 @@ function App() {
 
 
 
-  const handleFileSelect = async (file: File) => {
-    console.log('Selected file:', file.name, file.size, file.type)
+  const handleFileSelect = async (file: FileSelection) => {
+    // Handle both File objects and DemoSample objects
+    const isDemoSample = 'id' in file && 'expectedKey' in file
+    const fileName = isDemoSample ? (file as DemoSample).name : (file as File).name
+    const fileSize = isDemoSample ? (file as DemoSample).fileSize : (file as File).size
+    const fileType = isDemoSample ? 'audio/mpeg' : (file as File).type
+    
+    // File selected
 
     // Track user interaction
     trackUserInteraction('file_select', {
-      file_name: file.name,
-      file_size: file.size,
-      file_type: file.type,
+      file_name: fileName,
+      file_size: fileSize,
+      file_type: fileType,
     })
 
     // Start Sentry transaction for the entire analysis workflow
-    const transaction = createAnalysisTransaction(file.name, file.size)
+    const transaction = createAnalysisTransaction(fileName, fileSize)
     const fileUploadStartTime = performance.now()
 
     // Cleanup previous resources
@@ -149,27 +153,56 @@ function App() {
     resetState()
 
     try {
-      // Load the audio file and create AudioBuffer with enhanced progress tracking
-      const buffer = await loadAudioFile(file, (loadProgress) => {
-        // File loading progress (0-30%)
-        const scaledProgress = loadProgress * 0.3
+      let buffer: AudioBuffer
+      let audioFile: AudioFile | null = null
+
+      if (isDemoSample) {
+        // Handle demo sample - load from demo audio loader
+        const { demoAudioLoader } = await import('./utils/demoAudioLoader')
+        const result = await demoAudioLoader.loadSample(file as DemoSample, {
+          useCache: true,
+          timeout: 10000
+        })
+        buffer = result.audioBuffer
+        audioBufferRef.current = buffer
+
+        // Create AudioFile object for demo sample
+        audioFile = {
+          file: new File([], fileName, { type: fileType }),
+          name: fileName,
+          size: fileSize,
+          format: 'mp3',
+          duration: (file as DemoSample).duration
+        }
+
+        // Set progress to 30% for demo samples (no file loading progress needed)
         setAppState(prev => ({
           ...prev,
-          progress: scaledProgress
+          progress: 30
         }))
-      })
-      audioBufferRef.current = buffer
+      } else {
+        // Handle regular file upload
+        buffer = await loadAudioFile(file as File, (loadProgress) => {
+          // File loading progress (0-30%)
+          const scaledProgress = loadProgress * 0.3
+          setAppState(prev => ({
+            ...prev,
+            progress: scaledProgress
+          }))
+        })
+        audioBufferRef.current = buffer
 
       // Track file upload performance
       const fileUploadDuration = performance.now() - fileUploadStartTime
-      trackFileUpload(file.size, file.type, fileUploadDuration)
+      trackFileUpload(fileSize, fileType, fileUploadDuration)
       trackAudioAnalysisPerformance('file_upload', fileUploadStartTime, {
-        file_size: file.size,
-        file_type: file.type,
+        file_size: fileSize,
+        file_type: fileType,
       })
 
-      // Create AudioFile object with metadata
-      const audioFile = createAudioFileObject(file, buffer)
+        // Create AudioFile object with metadata
+        audioFile = createAudioFileObject(file as File, buffer)
+      }
 
       if (audioFile) {
         // Update centralized state - file loading complete at 30%
@@ -189,12 +222,12 @@ function App() {
 
         // Start analysis phase with simulated smooth progress
         setProcessingStage('analyzing')
-        console.log('Audio loaded successfully, starting analysis...')
+        // Audio loaded successfully, starting analysis
 
         // Track analysis start
         trackUserInteraction('analysis_start', {
-          file_name: file.name,
-          file_size: file.size,
+          file_name: fileName,
+          file_size: fileSize,
         })
         const analysisStartTime = performance.now()
 
@@ -213,7 +246,7 @@ function App() {
           const [result] = await Promise.all([
             executeAudioProcessing(buffer, debugConfig.enableCaching ? file : undefined, (partialResult: Partial<AnalysisResult>) => {
               // Show partial results as they become available
-              console.log('Partial result received:', partialResult)
+              // Partial result received
               setAppState(prev => ({
                 ...prev,
                 analysisResult: {
@@ -232,7 +265,7 @@ function App() {
             analysisResult: result
           }))
           setProcessingStage('complete')
-          console.log('Analysis completed:', result)
+          // Analysis completed
 
           // Track successful analysis completion
           trackAudioAnalysisPerformance('bpm_detection', analysisStartTime, {
@@ -260,8 +293,8 @@ function App() {
           // Track analysis error
           trackAnalysisError('processing_failed', {
             error_message: errorMessage,
-            file_name: file.name,
-            file_size: file.size,
+            file_name: fileName,
+            file_size: fileSize,
           })
 
           // Report error to Sentry
@@ -282,9 +315,9 @@ function App() {
 
       // Track file upload error
       if (errorMessage.includes('format')) {
-        trackAnalysisError('unsupported_format', { file_type: file.type })
+        trackAnalysisError('unsupported_format', { file_type: fileType })
       } else if (errorMessage.includes('size')) {
-        trackAnalysisError('file_too_large', { file_size: file.size })
+        trackAnalysisError('file_too_large', { file_size: fileSize })
       } else {
         trackAnalysisError('processing_failed', { error_message: errorMessage })
       }
@@ -343,7 +376,7 @@ function App() {
         analysisResult: result
       }))
       setProcessingStage('complete')
-      console.log('Retry analysis completed:', result)
+      // Retry analysis completed
     } catch (retryError) {
       console.error('Retry analysis failed:', retryError)
       const errorMessage = retryError instanceof Error ? retryError.message : 'Retry failed'
@@ -508,14 +541,19 @@ function App() {
                     <FileUpload
                       onFileSelect={handleFileSelect}
                       isProcessing={isProcessingAny}
+                      error={appState.error && processingStage === 'error' && !appState.audioBuffer ? appState.error : null}
+                      onDismissError={() => {
+                        setAppState(prev => ({ ...prev, error: null }))
+                        setProcessingStage('idle')
+                      }}
                     />
                   </Box>
 
                   {/* Progress Indicators */}
                   {isProcessingAny && <ProgressIndicator />}
 
-                  {/* Error Display */}
-                  {appState.error && processingStage === 'error' && (
+                  {/* Error Display - only show for processing errors, not file validation errors */}
+                  {appState.error && processingStage === 'error' && appState.audioBuffer && (
                     <Box w="100%" maxW={contentMaxW}>
                       <ErrorDisplay
                         error={appState.error}

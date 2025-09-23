@@ -67,3 +67,61 @@ export const MAX_PROCESSING_TIME = 30 * 1000 // 30 seconds in milliseconds
 // BPM and confidence ranges
 export const BPM_RANGE = { min: 60, max: 200 } as const
 export const CONFIDENCE_RANGE = { min: 0, max: 1 } as const
+
+// Demo feature types
+export interface DemoSample {
+  id: string
+  name: string
+  description: string
+  subgenre: 'classic' | 'trap' | 'boom-bap' | 'modern'
+  expectedKey: string
+  expectedBPM: number
+  duration: number
+  fileSize: number
+  filePath: string
+  hipHopCharacteristics: {
+    tempoStyle: string // e.g., "laid-back", "uptempo", "moderate"
+    keyType: 'minor' | 'major'
+    productionEra: string // e.g., "90s", "2000s", "modern"
+    typicalUse: string // e.g., "freestyle", "commercial", "underground"
+  }
+}
+
+export interface DemoCategory {
+  id: string
+  name: string
+  description: string
+  samples: DemoSample[]
+  hipHopStyle: string
+  era: string
+  characteristics: string[]
+}
+
+export interface AudioLoadingOptions {
+  useCache?: boolean
+  preload?: boolean
+  timeout?: number
+}
+
+export interface LoadingProgress {
+  loaded: number
+  total: number
+  percentage: number
+  currentFile?: string
+}
+
+export interface AudioLoadingResult {
+  audioBuffer: AudioBuffer
+  sample: DemoSample
+  loadTime: number
+  fromCache: boolean
+}
+
+// Union type for file selection (regular files or demo samples)
+export type FileSelection = File | DemoSample
+
+// Extended AppState to support demo mode
+export interface ExtendedAppState extends AppState {
+  isDemoMode?: boolean
+  selectedDemoSample?: DemoSample | null
+}

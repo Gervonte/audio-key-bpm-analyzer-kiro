@@ -6,6 +6,7 @@ import {
   Spinner
 } from '@chakra-ui/react'
 import { useWaveform } from '../hooks/useWaveform'
+import { categorizeError } from '../utils/errorHandling'
 import type { WaveformData } from '../types'
 
 interface WaveformDisplayProps {
@@ -39,7 +40,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
 
       // Ensure we have valid dimensions before proceeding
       if (containerWidth <= 0 || viewportWidth <= 0) {
-        console.warn('Invalid container or viewport dimensions, skipping canvas resize')
+        // Invalid container or viewport dimensions, skipping canvas resize
         return
       }
 
@@ -70,7 +71,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
       // Only update if dimensions actually changed to prevent unnecessary re-renders
       setCanvasSize(prevSize => {
         if (prevSize.width !== width || prevSize.height !== height) {
-          console.log('Canvas size changed:', { from: prevSize, to: { width, height } })
+          // Canvas size changed
           return { width, height }
         }
         return prevSize
@@ -142,7 +143,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
 
       // Only update canvas size if it actually changed
       if (canvas.width !== width || canvas.height !== height) {
-        console.log('Updating canvas dimensions:', { width, height })
+        // Updating canvas dimensions
         canvas.width = width
         canvas.height = height
         canvas.style.width = `${width}px`
@@ -228,15 +229,28 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
           touchAction="pan-x pan-y"
         >
           {/* Show different content based on state - but maintain same container structure */}
-          {error ? (
-            <VStack gap={2}>
-              <Text color="red.800" fontWeight="bold">
-                Waveform Error
-              </Text>
-              <Text color="red.700" fontSize="sm" textAlign="center">
-                {error}
-              </Text>
-            </VStack>
+          {error && !isLoading ? (
+            (() => {
+              const errorInfo = categorizeError(error)
+              // Only show waveform-specific errors, not file validation/loading errors (handled by FileUpload)
+              if (errorInfo.type === 'file_validation' || errorInfo.type === 'browser_compatibility' || errorInfo.type === 'file_loading') {
+                return (
+                  <Text color="gray.500" fontSize="lg">
+                    Upload an audio file to see waveform
+                  </Text>
+                )
+              }
+              return (
+                <VStack gap={2}>
+                  <Text color="red.800" fontWeight="bold">
+                    Waveform Error
+                  </Text>
+                  <Text color="red.700" fontSize="sm" textAlign="center">
+                    {error}
+                  </Text>
+                </VStack>
+              )
+            })()
           ) : isLoading || isGenerating ? (
             <VStack gap={3}>
               <Spinner size="lg" color="red.500" />

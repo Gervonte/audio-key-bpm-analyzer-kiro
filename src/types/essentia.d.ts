@@ -1,4 +1,5 @@
 // Type declarations for essentia.js
+/* eslint-disable @typescript-eslint/no-explicit-any */
 declare module 'essentia.js' {
   export interface EssentiaWASM {
     // WebAssembly module interface

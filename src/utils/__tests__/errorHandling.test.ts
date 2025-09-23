@@ -149,7 +149,7 @@ describe('errorHandling utilities', () => {
 
     it('should detect missing Web Audio API', () => {
       const originalAudioContext = mockWindow.AudioContext
-      delete (mockWindow as any).AudioContext
+      delete (mockWindow as unknown as { AudioContext?: unknown }).AudioContext
 
       const result = checkBrowserCompatibility()
 
@@ -161,7 +161,7 @@ describe('errorHandling utilities', () => {
 
     it('should detect missing File API', () => {
       const originalFile = mockWindow.File
-      delete (mockWindow as any).File
+      delete (mockWindow as unknown as { File?: unknown }).File
 
       const result = checkBrowserCompatibility()
 

@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/react';
 export const trackAudioAnalysisPerformance = (
   operation: 'file_upload' | 'bpm_detection' | 'key_detection' | 'waveform_generation',
   startTime: number,
-  metadata?: Record<string, any>
+  metadata?: Record<string, string | number | boolean>
 ) => {
   const duration = performance.now() - startTime;
   
@@ -20,49 +20,17 @@ export const trackAudioAnalysisPerformance = (
     },
   });
 
-  // Track as custom metric (if metrics API is available)
-  try {
-    const metrics = (Sentry as any).metrics;
-    if (metrics && typeof metrics.distribution === 'function') {
-      metrics.distribution('audio.analysis.duration', duration, {
-        tags: {
-          operation,
-          ...metadata,
-        },
-      });
-    }
-  } catch (e) {
-    // Metrics API not available
-  }
+  // Note: Custom metrics tracking removed due to Sentry API limitations
+  // Consider using Sentry.addBreadcrumb or custom events for tracking
 };
 
 /**
  * Track file upload metrics
  */
-export const trackFileUpload = (fileSize: number, fileType: string, duration: number) => {
-  try {
-    const metrics = (Sentry as any).metrics;
-    if (metrics) {
-      if (typeof metrics.distribution === 'function') {
-        metrics.distribution('file.upload.duration', duration, {
-          tags: {
-            file_type: fileType,
-            size_category: getFileSizeCategory(fileSize),
-          },
-        });
-      }
-
-      if (typeof metrics.increment === 'function') {
-        metrics.increment('file.upload.count', 1, {
-          tags: {
-            file_type: fileType,
-          },
-        });
-      }
-    }
-  } catch (e) {
-    // Metrics API not available
-  }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const trackFileUpload = (_fileSize: number, _fileType: string, _duration: number) => {
+  // Note: Custom metrics tracking removed due to Sentry API limitations
+  // Consider using Sentry.addBreadcrumb or custom events for tracking
 };
 
 /**
@@ -70,7 +38,7 @@ export const trackFileUpload = (fileSize: number, fileType: string, duration: nu
  */
 export const trackAnalysisError = (
   errorType: 'timeout' | 'processing_failed' | 'unsupported_format' | 'file_too_large',
-  context?: Record<string, any>
+  context?: Record<string, string | number | boolean>
 ) => {
   Sentry.addBreadcrumb({
     category: 'audio.error',
@@ -79,18 +47,7 @@ export const trackAnalysisError = (
     data: context,
   });
 
-  try {
-    const metrics = (Sentry as any).metrics;
-    if (metrics && typeof metrics.increment === 'function') {
-      metrics.increment('audio.analysis.error', 1, {
-        tags: {
-          error_type: errorType,
-        },
-      });
-    }
-  } catch (e) {
-    // Metrics API not available
-  }
+  // Note: Custom metrics tracking removed due to Sentry API limitations
 };
 
 /**
@@ -98,7 +55,7 @@ export const trackAnalysisError = (
  */
 export const trackUserInteraction = (
   action: 'file_select' | 'analysis_start' | 'reset' | 'retry' | 'sentry_test',
-  metadata?: Record<string, any>
+  metadata?: Record<string, string | number | boolean>
 ) => {
   Sentry.addBreadcrumb({
     category: 'user.interaction',
@@ -107,36 +64,16 @@ export const trackUserInteraction = (
     data: metadata,
   });
 
-  try {
-    const metrics = (Sentry as any).metrics;
-    if (metrics && typeof metrics.increment === 'function') {
-      metrics.increment('user.interaction', 1, {
-        tags: {
-          action,
-        },
-      });
-    }
-  } catch (e) {
-    // Metrics API not available
-  }
+  // Note: Custom metrics tracking removed due to Sentry API limitations
 };
 
 /**
  * Track Core Web Vitals manually (in addition to automatic tracking)
  */
-export const trackWebVital = (name: string, value: number, rating: 'good' | 'needs-improvement' | 'poor') => {
-  try {
-    const metrics = (Sentry as any).metrics;
-    if (metrics && typeof metrics.distribution === 'function') {
-      metrics.distribution(`web_vital.${name}`, value, {
-        tags: {
-          rating,
-        },
-      });
-    }
-  } catch (e) {
-    // Metrics API not available
-  }
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const trackWebVital = (_name: string, _value: number, _rating: 'good' | 'needs-improvement' | 'poor') => {
+  // Note: Custom metrics tracking removed due to Sentry API limitations
+  // Consider using Sentry.addBreadcrumb or custom events for tracking
 };
 
 /**

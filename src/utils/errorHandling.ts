@@ -58,8 +58,19 @@ export function categorizeError(error: Error | string): ErrorInfo {
     }
   }
 
+  // File loading errors (check these first as they're more specific)
+  if (lowerMessage.includes('corrupted') || lowerMessage.includes('unable to decode') || lowerMessage.includes('format not supported')) {
+    return {
+      type: 'file_loading',
+      message: 'Audio file appears to be corrupted or in an unsupported codec',
+      suggestion: 'Try re-exporting your audio file or use a different file.',
+      canRetry: false,
+      severity: 'error'
+    }
+  }
+
   // Browser compatibility errors
-  if (lowerMessage.includes('web audio api') || lowerMessage.includes('not supported')) {
+  if (lowerMessage.includes('web audio api') || (lowerMessage.includes('not supported') && !lowerMessage.includes('format'))) {
     return {
       type: 'browser_compatibility',
       message: 'Your browser doesn\'t support Web Audio API',
@@ -75,17 +86,6 @@ export function categorizeError(error: Error | string): ErrorInfo {
       message: 'Failed to initialize audio processing',
       suggestion: 'Try refreshing the page or using a different browser.',
       canRetry: true,
-      severity: 'error'
-    }
-  }
-
-  // File loading errors
-  if (lowerMessage.includes('corrupted') || lowerMessage.includes('unable to decode')) {
-    return {
-      type: 'file_loading',
-      message: 'Audio file appears to be corrupted or in an unsupported codec',
-      suggestion: 'Try re-exporting your audio file or use a different file.',
-      canRetry: false,
       severity: 'error'
     }
   }
@@ -213,7 +213,7 @@ export function checkBrowserCompatibility(): BrowserCompatibility {
   const suggestions: string[] = []
 
   // Check Web Audio API support
-  if (!window.AudioContext && !(window as any).webkitAudioContext) {
+  if (!window.AudioContext && !(window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext) {
     errors.push('Web Audio API is not supported')
     suggestions.push('Please use a modern browser like Chrome, Firefox, Safari, or Edge')
   }
@@ -238,7 +238,7 @@ export function checkBrowserCompatibility(): BrowserCompatibility {
   }
 
   // Check available memory (rough estimate)
-  if ('deviceMemory' in navigator && (navigator as any).deviceMemory && (navigator as any).deviceMemory < 2) {
+  if ('deviceMemory' in navigator && (navigator as unknown as { deviceMemory?: number }).deviceMemory && (navigator as unknown as { deviceMemory?: number }).deviceMemory! < 2) {
     warnings.push('Low device memory detected')
     suggestions.push('Large audio files may not process correctly on this device')
   }

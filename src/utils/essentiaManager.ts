@@ -1,4 +1,5 @@
 // Singleton manager for essentia.js to avoid multiple initialization attempts
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { EssentiaWASM, Essentia } from 'essentia.js'
 
 class EssentiaManager {
@@ -49,7 +50,7 @@ class EssentiaManager {
         console.log('Attempting essentia.js initialization...')
         
         // Use the working method: nested EssentiaWASM.EssentiaWASM with Essentia constructor
-        const wasmAny = EssentiaWASM as any
+        const wasmAny = EssentiaWASM as unknown as { EssentiaWASM?: unknown }
         if (wasmAny.EssentiaWASM && typeof Essentia !== 'undefined') {
           console.log('Using nested EssentiaWASM.EssentiaWASM with Essentia constructor')
           clearTimeout(timeout)
@@ -100,7 +101,7 @@ class EssentiaManager {
     if (this.essentia) {
       try {
         this.essentia.shutdown()
-          ; (this.essentia as any).delete()
+          ; (this.essentia as unknown as { delete?: () => void }).delete?.()
       } catch (error) {
         console.warn('Error cleaning up essentia instance:', error)
       }
