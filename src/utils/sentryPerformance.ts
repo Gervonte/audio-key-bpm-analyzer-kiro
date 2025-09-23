@@ -6,7 +6,7 @@ import * as Sentry from '@sentry/react';
 export const trackAudioAnalysisPerformance = (
   operation: 'file_upload' | 'bpm_detection' | 'key_detection' | 'waveform_generation',
   startTime: number,
-  metadata?: Record<string, any>
+  metadata?: Record<string, string | number | boolean>
 ) => {
   const duration = performance.now() - startTime;
   
@@ -27,6 +27,7 @@ export const trackAudioAnalysisPerformance = (
 /**
  * Track file upload metrics
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const trackFileUpload = (_fileSize: number, _fileType: string, _duration: number) => {
   // Note: Custom metrics tracking removed due to Sentry API limitations
   // Consider using Sentry.addBreadcrumb or custom events for tracking
@@ -37,7 +38,7 @@ export const trackFileUpload = (_fileSize: number, _fileType: string, _duration:
  */
 export const trackAnalysisError = (
   errorType: 'timeout' | 'processing_failed' | 'unsupported_format' | 'file_too_large',
-  context?: Record<string, any>
+  context?: Record<string, string | number | boolean>
 ) => {
   Sentry.addBreadcrumb({
     category: 'audio.error',
@@ -54,7 +55,7 @@ export const trackAnalysisError = (
  */
 export const trackUserInteraction = (
   action: 'file_select' | 'analysis_start' | 'reset' | 'retry' | 'sentry_test',
-  metadata?: Record<string, any>
+  metadata?: Record<string, string | number | boolean>
 ) => {
   Sentry.addBreadcrumb({
     category: 'user.interaction',
@@ -69,6 +70,7 @@ export const trackUserInteraction = (
 /**
  * Track Core Web Vitals manually (in addition to automatic tracking)
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const trackWebVital = (_name: string, _value: number, _rating: 'good' | 'needs-improvement' | 'poor') => {
   // Note: Custom metrics tracking removed due to Sentry API limitations
   // Consider using Sentry.addBreadcrumb or custom events for tracking
