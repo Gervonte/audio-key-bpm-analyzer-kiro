@@ -52,7 +52,13 @@ export class DemoAudioLoader {
   private initializeAudioContext(): void {
     try {
       // Create audio context with proper error handling
-      this.audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext!)()
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext
+      
+      if (!AudioContextClass) {
+        throw new Error('Web Audio API not supported in this browser')
+      }
+      
+      this.audioContext = new AudioContextClass()
       
       // Handle suspended context (user interaction required)
       if (this.audioContext.state === 'suspended') {
