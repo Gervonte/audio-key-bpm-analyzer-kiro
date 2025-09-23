@@ -22,12 +22,24 @@ export default defineConfig({
   ],
   build: {
     sourcemap: true, // Enable source maps for Sentry
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Suppress sourcemap warnings from Chakra UI
+        if (warning.code === 'SOURCEMAP_ERROR' && 
+            warning.message.includes('@chakra-ui/react/dist/esm/styled-system/factory.js')) {
+          return
+        }
+        warn(warning)
+      },
+    },
   },
   optimizeDeps: {
     include: ['@chakra-ui/react', '@emotion/react', '@emotion/styled'],
   },
   esbuild: {
     // Suppress sourcemap warnings for node_modules
-    logOverride: { 'this-is-undefined-in-esm': 'silent' },
+    logOverride: { 
+      'this-is-undefined-in-esm': 'silent'
+    },
   },
 })
