@@ -81,7 +81,7 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
 
         // Throttle progress updates to at most every 300ms for better visibility
         if (now - lastProgressUpdate >= 300 || clampedProgress === 100) {
-          console.log('AudioProcessor progress:', progressValue, '-> setting to:', clampedProgress)
+          // AudioProcessor progress update
 
           // Use flushSync to force immediate state update and re-render
           flushSync(() => {
@@ -164,7 +164,7 @@ export function useAudioProcessor(options: UseAudioProcessorOptions = {}): UseAu
 
   // Debug: Log progress changes
   useEffect(() => {
-    console.log('useAudioProcessor state changed:', { isProcessing, progress, error })
+    // useAudioProcessor state changed
   }, [isProcessing, progress, error])
 
   return {

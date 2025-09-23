@@ -122,7 +122,7 @@ function App() {
     const fileSize = isDemoSample ? (file as DemoSample).fileSize : (file as File).size
     const fileType = isDemoSample ? 'audio/mpeg' : (file as File).type
     
-    console.log('Selected file:', fileName, fileSize, fileType, isDemoSample ? '(Demo Sample)' : '(User File)')
+    // File selected
 
     // Track user interaction
     trackUserInteraction('file_select', {
@@ -222,7 +222,7 @@ function App() {
 
         // Start analysis phase with simulated smooth progress
         setProcessingStage('analyzing')
-        console.log('Audio loaded successfully, starting analysis...')
+        // Audio loaded successfully, starting analysis
 
         // Track analysis start
         trackUserInteraction('analysis_start', {
@@ -246,7 +246,7 @@ function App() {
           const [result] = await Promise.all([
             executeAudioProcessing(buffer, debugConfig.enableCaching ? file : undefined, (partialResult: Partial<AnalysisResult>) => {
               // Show partial results as they become available
-              console.log('Partial result received:', partialResult)
+              // Partial result received
               setAppState(prev => ({
                 ...prev,
                 analysisResult: {
@@ -265,7 +265,7 @@ function App() {
             analysisResult: result
           }))
           setProcessingStage('complete')
-          console.log('Analysis completed:', result)
+          // Analysis completed
 
           // Track successful analysis completion
           trackAudioAnalysisPerformance('bpm_detection', analysisStartTime, {
@@ -376,7 +376,7 @@ function App() {
         analysisResult: result
       }))
       setProcessingStage('complete')
-      console.log('Retry analysis completed:', result)
+      // Retry analysis completed
     } catch (retryError) {
       console.error('Retry analysis failed:', retryError)
       const errorMessage = retryError instanceof Error ? retryError.message : 'Retry failed'

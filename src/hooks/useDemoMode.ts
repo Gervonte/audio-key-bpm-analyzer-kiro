@@ -217,7 +217,7 @@ export function useDemoMode(options: UseDemoModeOptions = {}): UseDemoModeReturn
     try {
       await audioLoaderRef.current.loadSample(sample, { useCache: true })
     } catch (error) {
-      console.warn(`Failed to preload sample ${sampleId}:`, error)
+      // Failed to preload sample
     }
   }, [])
 
@@ -231,10 +231,10 @@ export function useDemoMode(options: UseDemoModeOptions = {}): UseDemoModeReturn
 
     try {
       await audioLoaderRef.current.preloadSamples(availableSamples, (progress) => {
-        console.log(`Preloading progress: ${progress.percentage}% - ${progress.currentFile}`)
+        // Preloading progress
       })
     } catch (error) {
-      console.warn('Failed to preload some samples:', error)
+      // Failed to preload some samples
     }
   }, [availableSamples])
 

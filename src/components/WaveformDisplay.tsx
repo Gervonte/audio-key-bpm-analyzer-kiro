@@ -40,7 +40,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
 
       // Ensure we have valid dimensions before proceeding
       if (containerWidth <= 0 || viewportWidth <= 0) {
-        console.warn('Invalid container or viewport dimensions, skipping canvas resize')
+        // Invalid container or viewport dimensions, skipping canvas resize
         return
       }
 
@@ -71,7 +71,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
       // Only update if dimensions actually changed to prevent unnecessary re-renders
       setCanvasSize(prevSize => {
         if (prevSize.width !== width || prevSize.height !== height) {
-          console.log('Canvas size changed:', { from: prevSize, to: { width, height } })
+          // Canvas size changed
           return { width, height }
         }
         return prevSize
@@ -143,7 +143,7 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
 
       // Only update canvas size if it actually changed
       if (canvas.width !== width || canvas.height !== height) {
-        console.log('Updating canvas dimensions:', { width, height })
+        // Updating canvas dimensions
         canvas.width = width
         canvas.height = height
         canvas.style.width = `${width}px`

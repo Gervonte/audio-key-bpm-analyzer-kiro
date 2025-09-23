@@ -230,7 +230,7 @@ export class AudioProcessor {
     onPartialResult?: (partialResult: Partial<AnalysisResult>) => void
   ): Promise<Omit<AnalysisResult, 'processingTime'>> {
     // Normalize audio first
-    console.log('AudioProcessor: Starting analysis, calling onProgress(10)')
+    // Starting analysis
     onProgress?.(10)
     const normalizedBuffer = this.normalizeAudio(audioBuffer)
 
@@ -239,7 +239,7 @@ export class AudioProcessor {
       throw new Error('Audio processing was cancelled')
     }
 
-    console.log('AudioProcessor: Normalization complete, calling onProgress(20)')
+    // Normalization complete
     onProgress?.(20)
 
     // Run key and BPM detection separately to show partial results

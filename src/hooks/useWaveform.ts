@@ -84,15 +84,7 @@ export const useWaveform = (): UseWaveformReturn => {
     const isMobile = window.innerWidth <= 768
     const devicePixelRatio = window.devicePixelRatio || 1
     
-    console.log('Drawing waveform:', {
-      canvasWidth: width,
-      canvasHeight: height,
-      peaksCount: peaks.length,
-      cssWidth: canvas.style.width,
-      cssHeight: canvas.style.height,
-      isMobile,
-      devicePixelRatio
-    })
+    // Drawing waveform
 
     // Clear canvas with subtle background
     ctx.clearRect(0, 0, width, height)

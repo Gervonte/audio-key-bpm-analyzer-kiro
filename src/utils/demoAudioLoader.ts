@@ -56,7 +56,7 @@ export class DemoAudioLoader {
       
       // Handle suspended context (user interaction required)
       if (this.audioContext.state === 'suspended') {
-        console.log('Audio context suspended, will resume on user interaction')
+        // Audio context suspended, will resume on user interaction
       }
     } catch (error) {
       console.error('Failed to initialize audio context:', error)
@@ -160,7 +160,7 @@ export class DemoAudioLoader {
         lastError = error instanceof Error ? error : new Error('Unknown error')
         
         if (attempt < retryAttempts) {
-          console.warn(`Attempt ${attempt} failed for sample ${sample.id}, retrying in ${retryDelay}ms:`, lastError.message)
+          // Retry attempt failed
           await new Promise(resolve => setTimeout(resolve, retryDelay))
           // Exponential backoff
           retryDelay *= 1.5
@@ -292,7 +292,7 @@ export class DemoAudioLoader {
             })
           }
         } catch (error) {
-          console.warn(`Failed to preload sample ${sample.id}:`, error)
+          // Failed to preload sample
           loaded++
           
           if (onProgress) {
@@ -439,7 +439,7 @@ export class DemoAudioLoader {
       this.preloadedSamples.delete(sampleId)
     })
 
-    console.log(`Cache optimized: removed ${samplesToRemove.length} samples, freed ${currentSize - this.getEstimatedCacheSize()} bytes`)
+    // Cache optimized
   }
 
   /**
@@ -452,7 +452,7 @@ export class DemoAudioLoader {
       .sort((a, b) => a.fileSize - b.fileSize) // Smallest first
     
     if (criticalSamples.length > 0) {
-      console.log(`Preloading ${criticalSamples.length} critical samples...`)
+      // Preloading critical samples
       await this.preloadSamples(criticalSamples, undefined, { maxConcurrent: 2 })
     }
   }

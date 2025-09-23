@@ -134,7 +134,7 @@ export function useAudioProcessingRetry<T>(
     baseDelay: 1500,
     backoffMultiplier: 2,
     onRetryAttempt: (attempt, error) => {
-      console.log(`Audio processing retry attempt ${attempt}:`, error?.message || 'Unknown error')
+      // Audio processing retry attempt
     }
   })
 }
@@ -148,7 +148,7 @@ export function useFileOperationRetry<T>(
     baseDelay: 1000,
     backoffMultiplier: 1.5,
     onRetryAttempt: (attempt, error) => {
-      console.log(`File operation retry attempt ${attempt}:`, error?.message || 'Unknown error')
+      // File operation retry attempt
     }
   })
 }

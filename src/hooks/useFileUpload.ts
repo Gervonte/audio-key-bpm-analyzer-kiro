@@ -46,12 +46,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
   }, [])
 
   const loadAudioFile = useCallback(async (file: File, onProgress?: (progress: number) => void): Promise<AudioBuffer> => {
-    console.log('loadAudioFile called with:', {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      lastModified: file.lastModified
-    })
+    // Loading audio file
 
     setIsLoading(true)
     setError(null)
@@ -100,7 +95,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
       updateProgress(8)
 
       // Use progressive loading for large files
-      console.log('Starting to read file:', file.name, 'Size:', file.size)
+      // Starting to read file
       let arrayBuffer: ArrayBuffer
       try {
         // Check if file is still accessible
@@ -117,7 +112,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
           }
         })
         
-        console.log('File read successfully, buffer size:', arrayBuffer.byteLength)
+        // File read successfully
         updateProgress(25) // File loading complete
       } catch (fileError) {
         console.error('File reading error:', fileError)
@@ -140,7 +135,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
       }
 
       // Decode audio data with better error handling and progress tracking
-      console.log('Starting audio decoding...')
+      // Starting audio decoding
       updateProgress(27) // Decoding preparation
       
       let audioBuffer: AudioBuffer
@@ -158,7 +153,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
         // Clear decode progress interval
         clearInterval(decodeProgressInterval)
         
-        console.log('Audio decoded successfully, duration:', audioBuffer.duration)
+        // Audio decoded successfully
         updateProgress(30) // Decoding complete
       } catch (decodeError) {
         const error = decodeError as Error
@@ -209,13 +204,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
   }, [validateFile])
 
   const loadDemoSample = useCallback(async (sample: DemoSample): Promise<AudioBuffer> => {
-    console.log('loadDemoSample called with:', {
-      id: sample.id,
-      name: sample.name,
-      filePath: sample.filePath,
-      expectedKey: sample.expectedKey,
-      expectedBPM: sample.expectedBPM
-    })
+    // Loading demo sample
 
     setIsLoading(true)
     setError(null)
@@ -230,14 +219,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
         timeout: 10000
       })
 
-      console.log('Demo sample loaded successfully:', {
-        sampleId: sample.id,
-        loadTime: result.loadTime,
-        fromCache: result.fromCache,
-        duration: result.audioBuffer.duration,
-        sampleRate: result.audioBuffer.sampleRate,
-        channels: result.audioBuffer.numberOfChannels
-      })
+      // Demo sample loaded successfully
 
       return result.audioBuffer
     } catch (error) {
