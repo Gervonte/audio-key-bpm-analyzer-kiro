@@ -44,27 +44,27 @@ export const HIP_HOP_DEMO_SAMPLES: DemoSample[] = [
   {
     id: 'chance-the-rapper-back-to-the-go',
     name: 'Chance The Rapper - Back To The Go [Instrumental]',
-    description: 'Complex instrumental track featuring Chance The Rapper\'s signature style with soulful samples and intricate production',
+    description: 'Complex instrumental (analyzed incorrectly) track featuring Chance The Rapper\'s signature style with soulful samples, intricate production, and jazz-influenced arrangements',
     subgenre: 'modern',
-    expectedKey: 'D Minor',
-    expectedBPM: 95,
+    expectedKey: 'E Minor',
+    expectedBPM: 170,
     duration: 35,
     fileSize: 4128967, // ~4.1MB actual file size
     filePath: '/demo-samples/Chance The Rapper - Back To The Go [Instrumental] | Complex.mp3',
     hipHopCharacteristics: {
       tempoStyle: 'laid-back',
       keyType: 'minor',
-      productionEra: '2010s',
+      productionEra: '2020s',
       typicalUse: 'versatile'
     }
   },
   {
     id: 'daffy-accurate',
     name: 'Daffy [prod. Tumfy] | Accurate',
-    description: 'Accurate instrumental production showcasing modern hip-hop techniques with clean mixing and mastering',
-    subgenre: 'modern',
-    expectedKey: 'E Minor',
-    expectedBPM: 110,
+    description: 'Clean instrumental production by Tumfy featuring modern trap elements with crisp 808s, melodic synths, and professional mixing',
+    subgenre: 'trap',
+    expectedKey: 'D Minor',
+    expectedBPM: 132,
     duration: 30,
     fileSize: 2797537, // ~2.8MB actual file size
     filePath: '/demo-samples/Daffy [prod. Tumfy] | Accurate.mp3',
@@ -78,10 +78,10 @@ export const HIP_HOP_DEMO_SAMPLES: DemoSample[] = [
   {
     id: 'daffy-corrupted',
     name: 'Daffy [prod. Tumfy] | Corrupted',
-    description: 'Corrupted version of the Daffy instrumental for testing error handling and audio processing edge cases',
-    subgenre: 'modern',
-    expectedKey: 'E Minor',
-    expectedBPM: 110,
+    description: 'Corrupted version of the Daffy trap instrumental for testing error handling and audio processing edge cases',
+    subgenre: 'trap',
+    expectedKey: 'Error',
+    expectedBPM: 0,
     duration: 30,
     fileSize: 2797537, // ~2.8MB actual file size (same as accurate version)
     filePath: '/demo-samples/Daffy [prod. Tumfy] | Corrupted.mp3',
@@ -95,10 +95,10 @@ export const HIP_HOP_DEMO_SAMPLES: DemoSample[] = [
   {
     id: 'kaytranada-glowed-up',
     name: 'Kaytranada - GLOWED UP [Instrumental] | Accurate',
-    description: 'Accurate instrumental from Kaytranada\'s GLOWED UP featuring modern electronic hip-hop production with jazz influences',
+    description: 'Accurate instrumental from Kaytranada\'s GLOWED UP featuring electronic hip-hop production with jazz fusion, soulful samples, and intricate beat programming',
     subgenre: 'modern',
-    expectedKey: 'F Minor',
-    expectedBPM: 105,
+    expectedKey: 'F# Minor',
+    expectedBPM: 139,
     duration: 40,
     fileSize: 4324760, // ~4.3MB actual file size
     filePath: '/demo-samples/Kaytranada - GLOWED UP [Instrumental] | Accurate.mp3',
@@ -118,11 +118,20 @@ export const DEMO_CATEGORIES: DemoCategory[] = [
   {
     id: 'modern',
     name: 'Modern Hip-Hop',
-    description: 'Contemporary hip-hop production featuring real artist instrumentals',
+    description: 'Contemporary hip-hop production featuring real artist instrumentals with jazz and electronic influences',
     samples: HIP_HOP_DEMO_SAMPLES.filter(s => s.subgenre === 'modern'),
     hipHopStyle: 'Contemporary',
     era: '2010s-2020s',
-    characteristics: ['real artist tracks', 'modern production', 'versatile styles', 'current trends']
+    characteristics: ['real artist tracks', 'jazz fusion', 'electronic elements', 'versatile styles']
+  },
+  {
+    id: 'trap',
+    name: 'Trap Production',
+    description: 'Modern trap instrumentals featuring 808s, melodic synths, and contemporary production techniques',
+    samples: HIP_HOP_DEMO_SAMPLES.filter(s => s.subgenre === 'trap'),
+    hipHopStyle: 'Trap',
+    era: '2020s',
+    characteristics: ['808s', 'melodic synths', 'modern mixing', 'commercial appeal']
   }
 ]
 

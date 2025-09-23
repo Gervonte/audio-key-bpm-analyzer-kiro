@@ -171,9 +171,6 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
             fontSize={sizeProps.descriptionSize} 
             color="gray.600"
             lineHeight="1.4"
-            overflow="hidden"
-            textOverflow="ellipsis"
-            maxH="5.6em"
           >
             {sample.description}
           </Text>
@@ -184,42 +181,42 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
               <Text fontWeight="medium" minW="fit-content">Expected:</Text>
               <Text textAlign="right" flex="1">{sample.expectedKey}, {sample.expectedBPM} BPM</Text>
             </HStack>
-            
-            <HStack justify="space-between" wrap="wrap">
-              <Text fontWeight="medium" minW="fit-content">Duration:</Text>
-              <Text textAlign="right" flex="1">{sample.duration}s</Text>
-            </HStack>
-            
-            <HStack justify="space-between" wrap="wrap">
-              <Text fontWeight="medium" minW="fit-content">Era:</Text>
-              <Text textAlign="right" flex="1">{sample.hipHopCharacteristics.productionEra}</Text>
-            </HStack>
-            
-            <HStack justify="space-between" wrap="wrap">
-              <Text fontWeight="medium" minW="fit-content">Style:</Text>
-              <Text textAlign="right" flex="1">{sample.hipHopCharacteristics.tempoStyle}</Text>
-            </HStack>
           </VStack>
         </VStack>
         
         {/* Action button */}
         <Box>
-          <Button
-            size={sizeProps.buttonSize}
-            colorScheme="red"
-            variant={isSelected ? 'solid' : 'outline'}
+          <button
             onClick={!disabled && !isLoading ? onSelect : undefined}
             disabled={disabled || isLoading}
-            loading={isLoading}
-            loadingText="Loading..."
-            width="full"
-            _hover={!disabled && !isLoading ? {
-              bg: isSelected ? 'red.600' : 'red.50',
-              borderColor: 'red.500'
-            } : {}}
+            style={{
+              width: '100%',
+              padding: sizeProps.buttonSize === 'sm' ? '8px 12px' : sizeProps.buttonSize === 'lg' ? '12px 20px' : '10px 16px',
+              fontSize: sizeProps.buttonSize === 'sm' ? '14px' : sizeProps.buttonSize === 'lg' ? '18px' : '16px',
+              fontWeight: isSelected ? 'bold' : 'normal',
+              backgroundColor: isSelected ? '#dc2626' : 'white',
+              color: isSelected ? 'white' : '#ef4444',
+              border: '2px solid #ef4444',
+              borderRadius: '6px',
+              cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
+              opacity: disabled || isLoading ? 0.6 : 1,
+              transition: 'all 0.2s ease-in-out'
+            }}
+            onMouseEnter={(e) => {
+              if (!disabled && !isLoading) {
+                e.currentTarget.style.backgroundColor = isSelected ? '#b91c1c' : '#fef2f2';
+                e.currentTarget.style.color = isSelected ? 'white' : '#ef4444';
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!disabled && !isLoading) {
+                e.currentTarget.style.backgroundColor = isSelected ? '#dc2626' : 'white';
+                e.currentTarget.style.color = isSelected ? 'white' : '#ef4444';
+              }
+            }}
           >
-            {isSelected ? 'Selected' : 'Try This Beat'}
-          </Button>
+            {isLoading ? 'Loading...' : (isSelected ? '✓ Selected' : 'Try This Beat')}
+          </button>
         </Box>
       </VStack>
     </Box>

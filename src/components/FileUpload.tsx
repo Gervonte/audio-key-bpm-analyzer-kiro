@@ -4,7 +4,7 @@ import {
   Button,
   Text,
   VStack,
-  SimpleGrid
+  HStack
 } from '@chakra-ui/react'
 import { validateAudioFile, formatFileSize } from '../utils/validation'
 import { checkBrowserCompatibility } from '../utils/errorHandling'
@@ -349,24 +349,32 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
           <Box w="100%" h="1px" bg="gray.200" />
 
-          {/* Sample Cards Grid */}
-          <SimpleGrid
-            columns={{ base: 1, md: 2, lg: 4 }}
+          {/* Sample Cards Horizontal Layout */}
+          <HStack
             gap={4}
             w="full"
+            align="stretch"
+            flexWrap="wrap"
+            justify={{ base: "center", md: "flex-start" }}
           >
             {availableSamples.map((sample) => (
-              <HipHopSampleCard
+              <Box
                 key={sample.id}
-                sample={sample}
-                isSelected={selectedSample?.id === sample.id}
-                onSelect={() => handleDemoSampleSelect(sample.id)}
-                isLoading={isDemoLoading && selectedSample?.id === sample.id}
-                disabled={isProcessing}
-                size="md"
-              />
+                flex={{ base: "1 1 100%", sm: "1 1 calc(50% - 8px)", md: "1 1 calc(25% - 12px)", lg: "1 1 calc(20% - 16px)" }}
+                minW={{ base: "280px", sm: "250px", md: "220px", lg: "200px" }}
+                maxW={{ base: "400px", sm: "350px", md: "300px", lg: "280px" }}
+              >
+                <HipHopSampleCard
+                  sample={sample}
+                  isSelected={selectedSample?.id === sample.id}
+                  onSelect={() => handleDemoSampleSelect(sample.id)}
+                  isLoading={isDemoLoading && selectedSample?.id === sample.id}
+                  disabled={isProcessing}
+                  size="md"
+                />
+              </Box>
             ))}
-          </SimpleGrid>
+          </HStack>
         </VStack>
       )}
     </VStack>
