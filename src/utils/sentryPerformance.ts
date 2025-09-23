@@ -20,49 +20,16 @@ export const trackAudioAnalysisPerformance = (
     },
   });
 
-  // Track as custom metric (if metrics API is available)
-  try {
-    const metrics = (Sentry as any).metrics;
-    if (metrics && typeof metrics.distribution === 'function') {
-      metrics.distribution('audio.analysis.duration', duration, {
-        tags: {
-          operation,
-          ...metadata,
-        },
-      });
-    }
-  } catch (e) {
-    // Metrics API not available
-  }
+  // Note: Custom metrics tracking removed due to Sentry API limitations
+  // Consider using Sentry.addBreadcrumb or custom events for tracking
 };
 
 /**
  * Track file upload metrics
  */
-export const trackFileUpload = (fileSize: number, fileType: string, duration: number) => {
-  try {
-    const metrics = (Sentry as any).metrics;
-    if (metrics) {
-      if (typeof metrics.distribution === 'function') {
-        metrics.distribution('file.upload.duration', duration, {
-          tags: {
-            file_type: fileType,
-            size_category: getFileSizeCategory(fileSize),
-          },
-        });
-      }
-
-      if (typeof metrics.increment === 'function') {
-        metrics.increment('file.upload.count', 1, {
-          tags: {
-            file_type: fileType,
-          },
-        });
-      }
-    }
-  } catch (e) {
-    // Metrics API not available
-  }
+export const trackFileUpload = (_fileSize: number, _fileType: string, _duration: number) => {
+  // Note: Custom metrics tracking removed due to Sentry API limitations
+  // Consider using Sentry.addBreadcrumb or custom events for tracking
 };
 
 /**
@@ -79,18 +46,7 @@ export const trackAnalysisError = (
     data: context,
   });
 
-  try {
-    const metrics = (Sentry as any).metrics;
-    if (metrics && typeof metrics.increment === 'function') {
-      metrics.increment('audio.analysis.error', 1, {
-        tags: {
-          error_type: errorType,
-        },
-      });
-    }
-  } catch (e) {
-    // Metrics API not available
-  }
+  // Note: Custom metrics tracking removed due to Sentry API limitations
 };
 
 /**
@@ -107,36 +63,15 @@ export const trackUserInteraction = (
     data: metadata,
   });
 
-  try {
-    const metrics = (Sentry as any).metrics;
-    if (metrics && typeof metrics.increment === 'function') {
-      metrics.increment('user.interaction', 1, {
-        tags: {
-          action,
-        },
-      });
-    }
-  } catch (e) {
-    // Metrics API not available
-  }
+  // Note: Custom metrics tracking removed due to Sentry API limitations
 };
 
 /**
  * Track Core Web Vitals manually (in addition to automatic tracking)
  */
-export const trackWebVital = (name: string, value: number, rating: 'good' | 'needs-improvement' | 'poor') => {
-  try {
-    const metrics = (Sentry as any).metrics;
-    if (metrics && typeof metrics.distribution === 'function') {
-      metrics.distribution(`web_vital.${name}`, value, {
-        tags: {
-          rating,
-        },
-      });
-    }
-  } catch (e) {
-    // Metrics API not available
-  }
+export const trackWebVital = (_name: string, _value: number, _rating: 'good' | 'needs-improvement' | 'poor') => {
+  // Note: Custom metrics tracking removed due to Sentry API limitations
+  // Consider using Sentry.addBreadcrumb or custom events for tracking
 };
 
 /**

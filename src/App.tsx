@@ -126,13 +126,13 @@ function App() {
 
     // Track user interaction
     trackUserInteraction('file_select', {
-      file_name: file.name,
-      file_size: file.size,
-      file_type: file.type,
+      file_name: fileName,
+      file_size: fileSize,
+      file_type: fileType,
     })
 
     // Start Sentry transaction for the entire analysis workflow
-    const transaction = createAnalysisTransaction(file.name, file.size)
+    const transaction = createAnalysisTransaction(fileName, fileSize)
     const fileUploadStartTime = performance.now()
 
     // Cleanup previous resources
@@ -194,10 +194,10 @@ function App() {
 
       // Track file upload performance
       const fileUploadDuration = performance.now() - fileUploadStartTime
-      trackFileUpload(file.size, file.type, fileUploadDuration)
+      trackFileUpload(fileSize, fileType, fileUploadDuration)
       trackAudioAnalysisPerformance('file_upload', fileUploadStartTime, {
-        file_size: file.size,
-        file_type: file.type,
+        file_size: fileSize,
+        file_type: fileType,
       })
 
         // Create AudioFile object with metadata
@@ -226,8 +226,8 @@ function App() {
 
         // Track analysis start
         trackUserInteraction('analysis_start', {
-          file_name: file.name,
-          file_size: file.size,
+          file_name: fileName,
+          file_size: fileSize,
         })
         const analysisStartTime = performance.now()
 
@@ -293,8 +293,8 @@ function App() {
           // Track analysis error
           trackAnalysisError('processing_failed', {
             error_message: errorMessage,
-            file_name: file.name,
-            file_size: file.size,
+            file_name: fileName,
+            file_size: fileSize,
           })
 
           // Report error to Sentry
@@ -315,9 +315,9 @@ function App() {
 
       // Track file upload error
       if (errorMessage.includes('format')) {
-        trackAnalysisError('unsupported_format', { file_type: file.type })
+        trackAnalysisError('unsupported_format', { file_type: fileType })
       } else if (errorMessage.includes('size')) {
-        trackAnalysisError('file_too_large', { file_size: file.size })
+        trackAnalysisError('file_too_large', { file_size: fileSize })
       } else {
         trackAnalysisError('processing_failed', { error_message: errorMessage })
       }
