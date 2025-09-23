@@ -43,8 +43,8 @@ export interface DemoCategory {
 export const HIP_HOP_DEMO_SAMPLES: DemoSample[] = [
   {
     id: 'chance-the-rapper-back-to-the-go',
-    name: 'Chance The Rapper - Back To The Go [Instrumental]',
-    description: 'Complex instrumental (analyzed incorrectly) track featuring Chance The Rapper\'s signature style with soulful samples, intricate production, and jazz-influenced arrangements',
+    name: 'Chance The Rapper - Back To The Go [Instrumental]| Inaccurate',
+    description: 'Inaccurately analyzed showing essentia.js limitations with a track featuring Chance The Rapper\'s signature style with soulful samples, intricate production, and jazz-influenced arrangements',
     subgenre: 'modern',
     expectedKey: 'E Minor',
     expectedBPM: 170,

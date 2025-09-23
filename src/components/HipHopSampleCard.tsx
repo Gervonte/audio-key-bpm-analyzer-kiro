@@ -35,9 +35,16 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
   disabled = false,
   size = 'md'
 }) => {
-  const getSubgenreColor = () => {
-    // All subgenres use red shades to match design system
-    return 'red'
+  const getAccuracyStatus = () => {
+    if (sample.name.includes('Corrupted')) {
+      return { text: 'Error', bg: 'white', color: 'red', border: '1px solid red' }
+    } else if (sample.name.includes('Accurate')) {
+      return { text: 'Accurate', bg: 'white', color: 'red', border: '1px solid red' }
+    } else if (sample.name.includes('Inaccurate')) {
+      return { text: 'Inaccurate', bg: 'white', color: 'red', border: '1px solid red' }
+    } else {
+      return { text: 'Unknown', bg: 'white', color: 'red', border: '1px solid red' }
+    }
   }
 
   const getSizeProps = () => {
@@ -149,19 +156,19 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
                 fontSize={sizeProps.titleSize} 
                 color="black"
                 lineHeight="1.3"
-                overflow="hidden"
-                textOverflow="ellipsis"
-                maxH="2.6em"
               >
                 {sample.name}
               </Text>
               <Badge 
-                colorScheme={getSubgenreColor()} 
+                bg={getAccuracyStatus().bg}
+                color={getAccuracyStatus().color}
+                border={getAccuracyStatus().border}
                 size="sm"
                 textTransform="uppercase"
                 fontWeight="bold"
+                borderRadius="md"
               >
-                {sample.subgenre.replace('-', ' ')}
+                {getAccuracyStatus().text}
               </Badge>
             </VStack>
           </HStack>
@@ -195,8 +202,8 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
               fontSize: sizeProps.buttonSize === 'sm' ? '14px' : sizeProps.buttonSize === 'lg' ? '18px' : '16px',
               fontWeight: isSelected ? 'bold' : 'normal',
               backgroundColor: isSelected ? '#dc2626' : 'white',
-              color: isSelected ? 'white' : '#ef4444',
-              border: '2px solid #ef4444',
+              color: isSelected ? 'white' : 'black',
+              border: isSelected ? '2px solid #dc2626' : '2px solid black',
               borderRadius: '6px',
               cursor: disabled || isLoading ? 'not-allowed' : 'pointer',
               opacity: disabled || isLoading ? 0.6 : 1,
@@ -204,14 +211,14 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
             }}
             onMouseEnter={(e) => {
               if (!disabled && !isLoading) {
-                e.currentTarget.style.backgroundColor = isSelected ? '#b91c1c' : '#fef2f2';
-                e.currentTarget.style.color = isSelected ? 'white' : '#ef4444';
+                e.currentTarget.style.backgroundColor = isSelected ? '#b91c1c' : 'black';
+                e.currentTarget.style.color = isSelected ? 'white' : 'white';
               }
             }}
             onMouseLeave={(e) => {
               if (!disabled && !isLoading) {
                 e.currentTarget.style.backgroundColor = isSelected ? '#dc2626' : 'white';
-                e.currentTarget.style.color = isSelected ? 'white' : '#ef4444';
+                e.currentTarget.style.color = isSelected ? 'white' : 'black';
               }
             }}
           >
