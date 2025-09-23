@@ -243,8 +243,19 @@ function App() {
 
         // Run simulated progress and real analysis in parallel
         try {
+          // For caching, we need to pass a File object, not the original DemoSample
+          let fileForCaching: File | undefined
+          if (debugConfig.enableCaching) {
+            if (isDemoSample) {
+              // Create a File object from the demo sample for caching purposes
+              fileForCaching = audioFile?.file || new File([], fileName, { type: fileType })
+            } else {
+              fileForCaching = file as File
+            }
+          }
+
           const [result] = await Promise.all([
-            executeAudioProcessing(buffer, debugConfig.enableCaching ? file : undefined, (partialResult: Partial<AnalysisResult>) => {
+            executeAudioProcessing(buffer, fileForCaching, (partialResult: Partial<AnalysisResult>) => {
               // Show partial results as they become available
               // Partial result received
               setAppState(prev => ({
