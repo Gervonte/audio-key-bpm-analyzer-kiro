@@ -4,27 +4,48 @@ import {
   Button,
   Text,
   VStack,
+  SimpleGrid
 } from '@chakra-ui/react'
 import { validateAudioFile, formatFileSize } from '../utils/validation'
 import { checkBrowserCompatibility } from '../utils/errorHandling'
 import { SUPPORTED_FORMATS, MAX_FILE_SIZE } from '../types'
-import type { ValidationResult } from '../types'
+import type { ValidationResult, FileSelection } from '../types'
 import { ErrorDisplay } from './ErrorDisplay'
+import { DemoModeToggle } from './DemoModeToggle'
+import { HipHopSampleCard } from './HipHopSampleCard'
+import { useDemoMode } from '../hooks/useDemoMode'
 
 interface FileUploadProps {
-  onFileSelect: (file: File) => void
+  onFileSelect: (file: FileSelection) => void
   isProcessing: boolean
   acceptedFormats?: string[]
+  enableDemoMode?: boolean
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,
   isProcessing,
-  acceptedFormats = SUPPORTED_FORMATS
+  acceptedFormats = SUPPORTED_FORMATS,
+  enableDemoMode = true
 }) => {
   const [isDragOver, setIsDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showBrowserWarning, setShowBrowserWarning] = useState(false)
+
+  // Demo mode functionality
+  const {
+    isDemoMode,
+    selectedSample,
+    availableSamples,
+    isLoading: isDemoLoading,
+    error: demoError,
+    toggleDemoMode,
+    selectSample,
+  } = useDemoMode({
+    autoPreload: false,
+    preloadOnMount: false,
+    cacheEnabled: true
+  })
 
   // Check browser compatibility on mount
   React.useEffect(() => {
@@ -51,6 +72,19 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       onFileSelect(file)
     }
   }, [handleFileValidation, onFileSelect])
+
+  // Handle demo sample selection
+  const handleDemoSampleSelect = useCallback(async (sampleId: string) => {
+    try {
+      await selectSample(sampleId)
+      const sample = availableSamples.find(s => s.id === sampleId)
+      if (sample) {
+        onFileSelect(sample) // Pass the sample directly
+      }
+    } catch (error) {
+      console.error('Failed to select demo sample:', error)
+    }
+  }, [selectSample, availableSamples, onFileSelect])
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -144,33 +178,55 @@ export const FileUpload: React.FC<FileUploadProps> = ({
         />
       )}
 
-      <Box
-        border="2px dashed"
-        borderColor={isDragOver ? 'red.500' : 'gray.300'}
-        borderRadius="lg"
-        p={{ base: 6, md: 8 }}
-        textAlign="center"
-        bg={isDragOver ? 'gray.100' : 'gray.50'}
-        cursor={isProcessing ? 'not-allowed' : 'pointer'}
-        transition="all 0.2s"
-        _hover={!isProcessing ? {
-          borderColor: 'red.400',
-          bg: 'gray.100'
-        } : {}}
-        _active={!isProcessing ? {
-          borderColor: 'red.500',
-          bg: 'gray.200',
-          transform: 'scale(0.98)'
-        } : {}}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={handleClick}
-        opacity={isProcessing ? 0.6 : 1}
-        // Mobile touch optimization
-        minH={{ base: '120px', md: '140px' }}
-        touchAction="manipulation"
-      >
+      {/* Demo Mode Error */}
+      {demoError && (
+        <ErrorDisplay
+          error={demoError}
+          onDismiss={() => {}}
+          context="Demo Mode"
+        />
+      )}
+
+      {/* Demo Mode Toggle */}
+      {enableDemoMode && (
+        <DemoModeToggle
+          isDemoMode={isDemoMode}
+          onToggle={toggleDemoMode}
+          disabled={isProcessing}
+          size="md"
+          showDescription={true}
+        />
+      )}
+
+      {/* File Upload Area */}
+      {!isDemoMode ? (
+        <Box
+          border="2px dashed"
+          borderColor={isDragOver ? 'red.500' : 'gray.300'}
+          borderRadius="lg"
+          p={{ base: 6, md: 8 }}
+          textAlign="center"
+          bg={isDragOver ? 'gray.100' : 'gray.50'}
+          cursor={isProcessing ? 'not-allowed' : 'pointer'}
+          transition="all 0.2s"
+          _hover={!isProcessing ? {
+            borderColor: 'red.400',
+            bg: 'gray.100'
+          } : {}}
+          _active={!isProcessing ? {
+            borderColor: 'red.500',
+            bg: 'gray.200',
+            transform: 'scale(0.98)'
+          } : {}}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={handleClick}
+          opacity={isProcessing ? 0.6 : 1}
+          // Mobile touch optimization
+          minH={{ base: '120px', md: '140px' }}
+          touchAction="manipulation"
+        >
         <input
           id="file-input"
           type="file"
@@ -244,7 +300,59 @@ export const FileUpload: React.FC<FileUploadProps> = ({
             </VStack>
           )}
         </VStack>
-      </Box>
+        </Box>
+      ) : (
+        /* Demo Sample Selection Area */
+        <VStack gap={4} align="stretch">
+          <Box
+            border="2px dashed"
+            borderColor="gray.300"
+            borderRadius="lg"
+            p={{ base: 6, md: 8 }}
+            textAlign="center"
+            bg="gray.50"
+            minH={{ base: '120px', md: '140px' }}
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+          >
+            <VStack gap={3}>
+              <Text
+                fontSize={{ base: 'lg', md: 'xl' }}
+                fontWeight="medium"
+                color="black"
+                textAlign="center"
+              >
+                Try Hip-Hop Instrumental Samples
+              </Text>
+              <Text fontSize="sm" color="gray.600">
+                Select a sample below to analyze
+              </Text>
+            </VStack>
+          </Box>
+
+          <Box w="100%" h="1px" bg="gray.200" />
+
+          {/* Sample Cards Grid */}
+          <SimpleGrid
+            columns={{ base: 1, md: 2, lg: 4 }}
+            gap={4}
+            w="full"
+          >
+            {availableSamples.map((sample) => (
+              <HipHopSampleCard
+                key={sample.id}
+                sample={sample}
+                isSelected={selectedSample?.id === sample.id}
+                onSelect={() => handleDemoSampleSelect(sample.id)}
+                isLoading={isDemoLoading && selectedSample?.id === sample.id}
+                disabled={isProcessing}
+                size="md"
+              />
+            ))}
+          </SimpleGrid>
+        </VStack>
+      )}
     </VStack>
   )
 }

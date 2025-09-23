@@ -35,9 +35,7 @@ import { useFileUpload } from './hooks/useFileUpload'
 import { useAudioProcessor } from './hooks/useAudioProcessor'
 import { useAudioProcessingRetry } from './hooks/useRetry'
 import { getDebugConfig } from './utils/debugMode'
-import type { AppState, AnalysisResult } from './types'
-
-
+import type { AppState, AnalysisResult, FileSelection, DemoSample } from './types'
 
 // Processing stages for better state management
 type ProcessingStage = 'idle' | 'loading' | 'analyzing' | 'complete' | 'error'
@@ -117,8 +115,14 @@ function App() {
 
 
 
-  const handleFileSelect = async (file: File) => {
-    console.log('Selected file:', file.name, file.size, file.type)
+  const handleFileSelect = async (file: FileSelection) => {
+    // Handle both File objects and DemoSample objects
+    const isDemoSample = 'id' in file && 'expectedKey' in file
+    const fileName = isDemoSample ? (file as DemoSample).name : (file as File).name
+    const fileSize = isDemoSample ? (file as DemoSample).fileSize : (file as File).size
+    const fileType = isDemoSample ? 'audio/mpeg' : (file as File).type
+    
+    console.log('Selected file:', fileName, fileSize, fileType, isDemoSample ? '(Demo Sample)' : '(User File)')
 
     // Track user interaction
     trackUserInteraction('file_select', {
@@ -149,16 +153,44 @@ function App() {
     resetState()
 
     try {
-      // Load the audio file and create AudioBuffer with enhanced progress tracking
-      const buffer = await loadAudioFile(file, (loadProgress) => {
-        // File loading progress (0-30%)
-        const scaledProgress = loadProgress * 0.3
+      let buffer: AudioBuffer
+      let audioFile: any
+
+      if (isDemoSample) {
+        // Handle demo sample - load from demo audio loader
+        const { demoAudioLoader } = await import('./utils/demoAudioLoader')
+        const result = await demoAudioLoader.loadSample(file as DemoSample, {
+          useCache: true,
+          timeout: 10000
+        })
+        buffer = result.audioBuffer
+        audioBufferRef.current = buffer
+
+        // Create AudioFile object for demo sample
+        audioFile = {
+          file: new File([], fileName, { type: fileType }),
+          name: fileName,
+          size: fileSize,
+          format: 'mp3',
+          duration: (file as DemoSample).duration
+        }
+
+        // Set progress to 30% for demo samples (no file loading progress needed)
         setAppState(prev => ({
           ...prev,
-          progress: scaledProgress
+          progress: 30
         }))
-      })
-      audioBufferRef.current = buffer
+      } else {
+        // Handle regular file upload
+        buffer = await loadAudioFile(file as File, (loadProgress) => {
+          // File loading progress (0-30%)
+          const scaledProgress = loadProgress * 0.3
+          setAppState(prev => ({
+            ...prev,
+            progress: scaledProgress
+          }))
+        })
+        audioBufferRef.current = buffer
 
       // Track file upload performance
       const fileUploadDuration = performance.now() - fileUploadStartTime
@@ -168,8 +200,9 @@ function App() {
         file_type: file.type,
       })
 
-      // Create AudioFile object with metadata
-      const audioFile = createAudioFileObject(file, buffer)
+        // Create AudioFile object with metadata
+        audioFile = createAudioFileObject(file as File, buffer)
+      }
 
       if (audioFile) {
         // Update centralized state - file loading complete at 30%

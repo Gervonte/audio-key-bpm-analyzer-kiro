@@ -7,7 +7,7 @@ import {
   Button,
   Spinner,
 } from '@chakra-ui/react'
-import type { AnalysisResult } from '../types'
+import type { AnalysisResult, DemoSample } from '../types'
 import { ErrorDisplay } from './ErrorDisplay'
 import { TempoSuggestions } from './TempoSuggestions'
 
@@ -18,6 +18,8 @@ interface ResultsDisplayProps {
   error?: string
   onReset: () => void
   onRetry?: () => void
+  isDemoMode?: boolean
+  demoSample?: DemoSample | null
 }
 
 export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
@@ -27,6 +29,8 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
   error,
   onReset,
   onRetry,
+  isDemoMode = false,
+  demoSample = null,
 }) => {
   // Don't render anything if there's no audio buffer and not loading
   if (!audioBuffer && !analysisResult && !isLoading && !error) {
@@ -317,6 +321,133 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
             </Button>
           </VStack>
         </Box>
+
+        {/* Hip-Hop Educational Content for Demo Mode */}
+        {isDemoMode && demoSample && analysisResult && (
+          <Box bg="white" border="1px solid" borderColor="gray.200" borderRadius="lg" p={{ base: 4, md: 6 }} w="100%">
+            <VStack gap={4} align="stretch">
+              <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold" color="black" textAlign="center">
+                Hip-Hop Analysis Insights
+              </Text>
+
+              {/* Sample Information */}
+              <Box bg="red.50" border="1px solid" borderColor="red.200" borderRadius="md" p={4}>
+                <VStack gap={3} align="stretch">
+                  <Text fontSize="md" fontWeight="bold" color="red.800">
+                    {demoSample.name}
+                  </Text>
+                  <Text fontSize="sm" color="red.700">
+                    {demoSample.description}
+                  </Text>
+                  
+                  <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                    <Box>
+                      <Text fontSize="xs" color="red.600" fontWeight="medium">Subgenre:</Text>
+                      <Text fontSize="sm" color="red.800" fontWeight="bold">
+                        {demoSample.subgenre.replace('-', ' ').toUpperCase()}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontSize="xs" color="red.600" fontWeight="medium">Era:</Text>
+                      <Text fontSize="sm" color="red.800" fontWeight="bold">
+                        {demoSample.hipHopCharacteristics.productionEra}
+                      </Text>
+                    </Box>
+                    <Box>
+                      <Text fontSize="xs" color="red.600" fontWeight="medium">Style:</Text>
+                      <Text fontSize="sm" color="red.800" fontWeight="bold">
+                        {demoSample.hipHopCharacteristics.tempoStyle}
+                      </Text>
+                    </Box>
+                  </HStack>
+                </VStack>
+              </Box>
+
+              {/* Expected vs Detected Comparison */}
+              <Box bg="gray.50" border="1px solid" borderColor="gray.200" borderRadius="md" p={4}>
+                <VStack gap={3} align="stretch">
+                  <Text fontSize="md" fontWeight="bold" color="black">
+                    Expected vs Detected Results
+                  </Text>
+                  
+                  <HStack justify="space-between" flexWrap="wrap" gap={4}>
+                    {/* Key Comparison */}
+                    <VStack gap={1} align="center" flex="1" minW="120px">
+                      <Text fontSize="xs" color="gray.600" fontWeight="medium">Key</Text>
+                      <Text fontSize="sm" color="black" fontWeight="bold">
+                        Expected: {demoSample.expectedKey}
+                      </Text>
+                      <Text fontSize="sm" color="black" fontWeight="bold">
+                        Detected: {key?.keyName || 'Analyzing...'}
+                      </Text>
+                      {key && (
+                        <Box
+                          bg={key.keyName === demoSample.expectedKey ? "green.100" : "red.100"}
+                          color={key.keyName === demoSample.expectedKey ? "green.800" : "red.800"}
+                          px={2}
+                          py={1}
+                          borderRadius="sm"
+                        >
+                          <Text fontSize="xs" fontWeight="bold">
+                            {key.keyName === demoSample.expectedKey ? "✓ MATCH" : "✗ DIFFERENT"}
+                          </Text>
+                        </Box>
+                      )}
+                    </VStack>
+
+                    {/* BPM Comparison */}
+                    <VStack gap={1} align="center" flex="1" minW="120px">
+                      <Text fontSize="xs" color="gray.600" fontWeight="medium">BPM</Text>
+                      <Text fontSize="sm" color="black" fontWeight="bold">
+                        Expected: {demoSample.expectedBPM}
+                      </Text>
+                      <Text fontSize="sm" color="black" fontWeight="bold">
+                        Detected: {bpm?.bpm || 'Analyzing...'}
+                      </Text>
+                      {bpm && (
+                        <Box
+                          bg={Math.abs(bpm.bpm - demoSample.expectedBPM) <= 2 ? "green.100" : "red.100"}
+                          color={Math.abs(bpm.bpm - demoSample.expectedBPM) <= 2 ? "green.800" : "red.800"}
+                          px={2}
+                          py={1}
+                          borderRadius="sm"
+                        >
+                          <Text fontSize="xs" fontWeight="bold">
+                            {Math.abs(bpm.bpm - demoSample.expectedBPM) <= 2 ? "✓ MATCH" : "✗ DIFFERENT"}
+                          </Text>
+                        </Box>
+                      )}
+                    </VStack>
+                  </HStack>
+                </VStack>
+              </Box>
+
+              {/* Hip-Hop Educational Content */}
+              <Box bg="white" border="1px solid" borderColor="gray.300" borderRadius="md" p={4}>
+                <VStack gap={3} align="stretch">
+                  <Text fontSize="md" fontWeight="bold" color="black">
+                    About This Hip-Hop Style
+                  </Text>
+                  
+                  <Text fontSize="sm" color="gray.700" lineHeight="short">
+                    <strong>{demoSample.subgenre.replace('-', ' ').toUpperCase()}</strong> is a {demoSample.hipHopCharacteristics.productionEra} style 
+                    characterized by {demoSample.hipHopCharacteristics.tempoStyle} tempo and {demoSample.hipHopCharacteristics.keyType} key progressions. 
+                    This style is commonly used for {demoSample.hipHopCharacteristics.typicalUse} and features 
+                    {demoSample.subgenre === 'trap' ? ' heavy 808s, hi-hats, and dark minor keys' :
+                     demoSample.subgenre === 'boom-bap' ? ' classic drum breaks and soulful samples' :
+                     demoSample.subgenre === 'classic' ? ' heavy kick and snare patterns' :
+                     ' modern production techniques blending traditional elements'}.
+                  </Text>
+
+                  <Text fontSize="sm" color="gray.700" lineHeight="short">
+                    The expected key of <strong>{demoSample.expectedKey}</strong> and tempo of <strong>{demoSample.expectedBPM} BPM</strong> 
+                    are typical for this subgenre, creating the characteristic feel that defines {demoSample.subgenre.replace('-', ' ')} hip-hop.
+                  </Text>
+                </VStack>
+              </Box>
+            </VStack>
+          </Box>
+        )}
       </VStack>
     </Box>
   )

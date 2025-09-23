@@ -8,13 +8,14 @@ import {
   isCorruptedAudioError
 } from '../utils/audioProcessing'
 import { SUPPORTED_FORMATS } from '../types'
-import type { AudioFile, ValidationResult } from '../types'
+import type { AudioFile, ValidationResult, DemoSample } from '../types'
 import { loadLargeFile } from '../utils/progressiveLoader'
 import { memoryManager } from '../utils/memoryManager'
 
 interface UseFileUploadReturn {
   validateFile: (file: File) => ValidationResult
   loadAudioFile: (file: File, onProgress?: (progress: number) => void) => Promise<AudioBuffer>
+  loadDemoSample: (sample: DemoSample) => Promise<AudioBuffer>
   getSupportedFormats: () => readonly string[]
   createAudioFileObject: (file: File, audioBuffer?: AudioBuffer) => AudioFile | null
   checkBrowserCompatibility: () => { isSupported: boolean; error?: string }
@@ -207,6 +208,48 @@ export const useFileUpload = (): UseFileUploadReturn => {
     }
   }, [validateFile])
 
+  const loadDemoSample = useCallback(async (sample: DemoSample): Promise<AudioBuffer> => {
+    console.log('loadDemoSample called with:', {
+      id: sample.id,
+      name: sample.name,
+      filePath: sample.filePath,
+      expectedKey: sample.expectedKey,
+      expectedBPM: sample.expectedBPM
+    })
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Import demo audio loader dynamically to avoid circular dependencies
+      const { demoAudioLoader } = await import('../utils/demoAudioLoader')
+      
+      // Load the demo sample
+      const result = await demoAudioLoader.loadSample(sample, {
+        useCache: true,
+        timeout: 10000
+      })
+
+      console.log('Demo sample loaded successfully:', {
+        sampleId: sample.id,
+        loadTime: result.loadTime,
+        fromCache: result.fromCache,
+        duration: result.audioBuffer.duration,
+        sampleRate: result.audioBuffer.sampleRate,
+        channels: result.audioBuffer.numberOfChannels
+      })
+
+      return result.audioBuffer
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load demo sample'
+      console.error('Demo sample loading failed:', errorMessage)
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   const getSupportedFormats = useCallback((): readonly string[] => {
     return SUPPORTED_FORMATS
   }, [])
@@ -231,6 +274,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
   return {
     validateFile,
     loadAudioFile,
+    loadDemoSample,
     getSupportedFormats,
     createAudioFileObject,
     checkBrowserCompatibility,
