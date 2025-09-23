@@ -52,8 +52,9 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({
     )
   }
 
-  // Error state
-  if (error) {
+  // Error state - only show if we have an audio buffer (processing errors)
+  // File validation errors are handled by FileUpload component
+  if (error && audioBuffer) {
     return (
       <Box w="100%" maxW="600px" mx="auto" mt={6}>
         <ErrorDisplay

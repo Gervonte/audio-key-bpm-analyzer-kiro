@@ -541,14 +541,19 @@ function App() {
                     <FileUpload
                       onFileSelect={handleFileSelect}
                       isProcessing={isProcessingAny}
+                      error={appState.error && processingStage === 'error' && !appState.audioBuffer ? appState.error : null}
+                      onDismissError={() => {
+                        setAppState(prev => ({ ...prev, error: null }))
+                        setProcessingStage('idle')
+                      }}
                     />
                   </Box>
 
                   {/* Progress Indicators */}
                   {isProcessingAny && <ProgressIndicator />}
 
-                  {/* Error Display */}
-                  {appState.error && processingStage === 'error' && (
+                  {/* Error Display - only show for processing errors, not file validation errors */}
+                  {appState.error && processingStage === 'error' && appState.audioBuffer && (
                     <Box w="100%" maxW={contentMaxW}>
                       <ErrorDisplay
                         error={appState.error}

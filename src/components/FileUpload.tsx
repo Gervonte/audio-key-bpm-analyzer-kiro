@@ -20,13 +20,17 @@ interface FileUploadProps {
   isProcessing: boolean
   acceptedFormats?: string[]
   enableDemoMode?: boolean
+  error?: string | null
+  onDismissError?: () => void
 }
 
 export const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,
   isProcessing,
   acceptedFormats = SUPPORTED_FORMATS,
-  enableDemoMode = true
+  enableDemoMode = true,
+  error: externalError = null,
+  onDismissError
 }) => {
   const [isDragOver, setIsDragOver] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -77,17 +81,21 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
   // Handle demo sample selection
   const handleDemoSampleSelect = useCallback(async (sampleId: string) => {
+    const sample = availableSamples.find(s => s.id === sampleId)
+    if (!sample) {
+      console.error('Sample not found:', sampleId)
+      return
+    }
+
     try {
       await selectSample(sampleId)
       // If we get here, selectSample succeeded
-      const sample = availableSamples.find(s => s.id === sampleId)
-      if (sample) {
-        onFileSelect(sample) // Pass the sample directly
-      }
+      onFileSelect(sample) // Pass the sample directly
     } catch (error) {
       console.error('Failed to select demo sample:', error)
-      // Don't call onFileSelect if demo sample loading failed
-      // The error is already displayed by the demoError in FileUpload
+      // Still call onFileSelect with the sample so the error can be handled by the App component
+      // This allows corrupted files to trigger the proper error handling flow
+      onFileSelect(sample)
     }
   }, [selectSample, availableSamples, onFileSelect])
 
@@ -156,7 +164,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
   const handleDismissError = useCallback(() => {
     setError(null)
-  }, [])
+    onDismissError?.()
+  }, [onDismissError])
 
   const handleDismissBrowserWarning = useCallback(() => {
     setShowBrowserWarning(false)
@@ -174,17 +183,18 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       )}
 
       {/* File Upload Error */}
-      {error && (
+      {(error || externalError) && (
         <ErrorDisplay
-          error={error}
+          error={externalError || error}
           onRetry={handleRetry}
           onDismiss={handleDismissError}
           context="File Upload"
         />
       )}
+      
 
-      {/* Demo Mode Error */}
-      {demoError && (
+      {/* Demo Mode Error - only show if no external error */}
+      {demoError && !externalError && (
         <ErrorDisplay
           error={demoError}
           onRetry={retryLoading}

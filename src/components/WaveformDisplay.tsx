@@ -232,8 +232,8 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
           {error && !isLoading ? (
             (() => {
               const errorInfo = categorizeError(error)
-              // Only show waveform-specific errors, not file validation errors (handled by FileUpload)
-              if (errorInfo.type === 'file_validation' || errorInfo.type === 'browser_compatibility') {
+              // Only show waveform-specific errors, not file validation/loading errors (handled by FileUpload)
+              if (errorInfo.type === 'file_validation' || errorInfo.type === 'browser_compatibility' || errorInfo.type === 'file_loading') {
                 return (
                   <Text color="gray.500" fontSize="lg">
                     Upload an audio file to see waveform

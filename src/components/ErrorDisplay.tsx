@@ -101,6 +101,11 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
           borderColor={getErrorBorderColor(errorInfo.severity)}
           borderRadius="md"
           p={4}
+          style={{ 
+            pointerEvents: 'auto',
+            position: 'relative',
+            zIndex: 1
+          }}
         >
           <VStack align="stretch" gap={3}>
             <HStack w="100%" justify="space-between">
