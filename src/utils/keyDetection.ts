@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { KeyResult } from '../types'
 import { essentiaManager } from './essentiaManager'
 import { detectKeyFallback } from './fallbackKeyDetection'
@@ -7,7 +8,7 @@ export interface KeyDetectionOptions {
 }
 
 export class KeyDetector {
-  constructor(_sampleRate: number = 44100) {
+  constructor() {
     // Essentia will be managed by the singleton manager
   }
 
@@ -24,7 +25,7 @@ export class KeyDetector {
 
       // Convert AudioBuffer to mono signal for essentia.js
       // Note: audioBuffer is already preprocessed (mono + 16kHz) by AudioProcessor
-      let monoSignal = essentia.audioBufferToMonoSignal(audioBuffer)
+      const monoSignal = essentia.audioBufferToMonoSignal(audioBuffer)
       
       // No additional preprocessing needed since AudioProcessor already handles it
       // monoSignal is already at 16kHz and mono as per web demo

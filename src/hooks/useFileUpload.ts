@@ -8,13 +8,14 @@ import {
   isCorruptedAudioError
 } from '../utils/audioProcessing'
 import { SUPPORTED_FORMATS } from '../types'
-import type { AudioFile, ValidationResult } from '../types'
+import type { AudioFile, ValidationResult, DemoSample } from '../types'
 import { loadLargeFile } from '../utils/progressiveLoader'
 import { memoryManager } from '../utils/memoryManager'
 
 interface UseFileUploadReturn {
   validateFile: (file: File) => ValidationResult
   loadAudioFile: (file: File, onProgress?: (progress: number) => void) => Promise<AudioBuffer>
+  loadDemoSample: (sample: DemoSample) => Promise<AudioBuffer>
   getSupportedFormats: () => readonly string[]
   createAudioFileObject: (file: File, audioBuffer?: AudioBuffer) => AudioFile | null
   checkBrowserCompatibility: () => { isSupported: boolean; error?: string }
@@ -45,12 +46,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
   }, [])
 
   const loadAudioFile = useCallback(async (file: File, onProgress?: (progress: number) => void): Promise<AudioBuffer> => {
-    console.log('loadAudioFile called with:', {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      lastModified: file.lastModified
-    })
+    // Loading audio file
 
     setIsLoading(true)
     setError(null)
@@ -92,14 +88,14 @@ export const useFileUpload = (): UseFileUploadReturn => {
       // Create audio context with proper error handling
       try {
         audioContext = createAudioContext()
-      } catch (err) {
+      } catch {
         throw new Error('Failed to create audio context. Your browser may not support Web Audio API.')
       }
 
       updateProgress(8)
 
       // Use progressive loading for large files
-      console.log('Starting to read file:', file.name, 'Size:', file.size)
+      // Starting to read file
       let arrayBuffer: ArrayBuffer
       try {
         // Check if file is still accessible
@@ -116,7 +112,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
           }
         })
         
-        console.log('File read successfully, buffer size:', arrayBuffer.byteLength)
+        // File read successfully
         updateProgress(25) // File loading complete
       } catch (fileError) {
         console.error('File reading error:', fileError)
@@ -139,7 +135,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
       }
 
       // Decode audio data with better error handling and progress tracking
-      console.log('Starting audio decoding...')
+      // Starting audio decoding
       updateProgress(27) // Decoding preparation
       
       let audioBuffer: AudioBuffer
@@ -157,7 +153,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
         // Clear decode progress interval
         clearInterval(decodeProgressInterval)
         
-        console.log('Audio decoded successfully, duration:', audioBuffer.duration)
+        // Audio decoded successfully
         updateProgress(30) // Decoding complete
       } catch (decodeError) {
         const error = decodeError as Error
@@ -207,6 +203,35 @@ export const useFileUpload = (): UseFileUploadReturn => {
     }
   }, [validateFile])
 
+  const loadDemoSample = useCallback(async (sample: DemoSample): Promise<AudioBuffer> => {
+    // Loading demo sample
+
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Import demo audio loader dynamically to avoid circular dependencies
+      const { demoAudioLoader } = await import('../utils/demoAudioLoader')
+      
+      // Load the demo sample
+      const result = await demoAudioLoader.loadSample(sample, {
+        useCache: true,
+        timeout: 10000
+      })
+
+      // Demo sample loaded successfully
+
+      return result.audioBuffer
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load demo sample'
+      console.error('Demo sample loading failed:', errorMessage)
+      setError(errorMessage)
+      throw new Error(errorMessage)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
   const getSupportedFormats = useCallback((): readonly string[] => {
     return SUPPORTED_FORMATS
   }, [])
@@ -231,6 +256,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
   return {
     validateFile,
     loadAudioFile,
+    loadDemoSample,
     getSupportedFormats,
     createAudioFileObject,
     checkBrowserCompatibility,

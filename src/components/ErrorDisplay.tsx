@@ -101,6 +101,11 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
           borderColor={getErrorBorderColor(errorInfo.severity)}
           borderRadius="md"
           p={4}
+          style={{ 
+            pointerEvents: 'auto',
+            position: 'relative',
+            zIndex: 1
+          }}
         >
           <VStack align="stretch" gap={3}>
             <HStack w="100%" justify="space-between">
@@ -112,7 +117,16 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
               </HStack>
 
               {onDismiss && (
-                <Button size="sm" variant="ghost" onClick={onDismiss}>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={onDismiss}
+                  style={{ 
+                    pointerEvents: 'auto',
+                    zIndex: 1000,
+                    position: 'relative'
+                  }}
+                >
                   ×
                 </Button>
               )}
@@ -136,6 +150,11 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
                   size="sm"
                   colorScheme="blue"
                   onClick={onRetry}
+                  style={{ 
+                    pointerEvents: 'auto',
+                    zIndex: 1000,
+                    position: 'relative'
+                  }}
                 >
                   Try Again
                 </Button>
@@ -145,6 +164,11 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
                 size="sm"
                 variant="ghost"
                 onClick={toggleDetails}
+                style={{ 
+                  pointerEvents: 'auto',
+                  zIndex: 1000,
+                  position: 'relative'
+                }}
               >
                 {isDetailsOpen ? '▲ Hide' : '▼ Show'} Details
               </Button>

@@ -37,7 +37,7 @@ class MockAudioContext {
     this.state = 'closed'
   }
 
-  async decodeAudioData(_audioData: ArrayBuffer): Promise<AudioBuffer> {
+  async decodeAudioData(): Promise<AudioBuffer> {
     // Mock implementation - return a simple audio buffer
     return new MockAudioBuffer({
       numberOfChannels: 2,
@@ -48,9 +48,9 @@ class MockAudioContext {
 }
 
 // Set up global mocks
-; (globalThis as any).AudioBuffer = MockAudioBuffer
-  ; (globalThis as any).AudioContext = MockAudioContext
-  ; (globalThis as any).webkitAudioContext = MockAudioContext
+; (globalThis as unknown as { AudioBuffer?: unknown }).AudioBuffer = MockAudioBuffer
+  ; (globalThis as unknown as { AudioContext?: unknown }).AudioContext = MockAudioContext
+  ; (globalThis as unknown as { webkitAudioContext?: unknown }).webkitAudioContext = MockAudioContext
 
 // Mock window object for browser APIs
 if (typeof window !== 'undefined') {
@@ -66,7 +66,7 @@ if (typeof window !== 'undefined') {
 }
 
 // Mock essentia.js to prevent initialization issues in tests
-; (globalThis as any).EssentiaWASM = undefined
+; (globalThis as unknown as { EssentiaWASM?: unknown }).EssentiaWASM = undefined
 
 // Mock the essentia manager to always fail gracefully in tests
 import { vi } from 'vitest'

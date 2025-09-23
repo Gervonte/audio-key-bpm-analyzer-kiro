@@ -33,7 +33,7 @@ export const isDebugMode = (): boolean => {
     if (storedDebug === 'false') {
       return false
     }
-  } catch (error) {
+  } catch {
     // localStorage might not be available
     console.warn('localStorage not available for debug mode')
   }
@@ -49,7 +49,7 @@ export const enableDebugMode = (): void => {
   try {
     localStorage.setItem(DEBUG_STORAGE_KEY, 'true')
     console.log('Debug mode enabled. Refresh the page to see debug features.')
-  } catch (error) {
+  } catch {
     console.warn('Could not persist debug mode to localStorage')
   }
 }
@@ -61,7 +61,7 @@ export const disableDebugMode = (): void => {
   try {
     localStorage.setItem(DEBUG_STORAGE_KEY, 'false')
     console.log('Debug mode disabled. Refresh the page to hide debug features.')
-  } catch (error) {
+  } catch {
     console.warn('Could not persist debug mode to localStorage')
   }
 }
@@ -85,6 +85,7 @@ export const toggleDebugMode = (): boolean => {
  */
 if (typeof window !== 'undefined') {
   // Make debug functions available globally for console access
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   ; (window as any).debugMode = {
     isEnabled: isDebugMode,
     enable: enableDebugMode,

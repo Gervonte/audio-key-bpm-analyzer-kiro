@@ -62,7 +62,7 @@ const createMockAudioBuffer = (duration: number = 10): AudioBuffer => {
   globalThis.AudioBuffer = vi.fn().mockImplementation((options) => ({
     ...options,
     getChannelData: vi.fn().mockReturnValue(new Float32Array(options.length))
-  })) as any
+  })) as unknown as typeof AudioBuffer
 
   return mockBuffer
 }
@@ -258,7 +258,7 @@ describe('AudioProcessor', () => {
 
       try {
         await processor.processAudio(mockAudioBuffer)
-      } catch (error) {
+      } catch {
         // Error expected
       }
 

@@ -55,8 +55,8 @@ vi.mock('../utils/audioProcessor', () => ({
       processingTime: 2500
     }),
     cancelProcessing: vi.fn(),
-    keyDetector: {} as any,
-    bpmDetector: {} as any,
+    keyDetector: {} as unknown,
+    bpmDetector: {} as unknown,
     abortController: new AbortController(),
     getAudioFeatures: vi.fn(),
     normalizeAudio: vi.fn(),
@@ -162,7 +162,7 @@ describe('Integration Tests - Basic Functionality', () => {
 
   it('should render app and handle file upload', async () => {
     const { validateAudioFile } = await import('../utils/validation')
-    const mockValidateAudioFile = validateAudioFile as any
+    const mockValidateAudioFile = validateAudioFile as unknown as { mockReturnValue: (value: unknown) => void }
     mockValidateAudioFile.mockReturnValue({ isValid: true })
 
     renderApp()

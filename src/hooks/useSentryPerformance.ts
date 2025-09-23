@@ -14,7 +14,7 @@ export const useSentryPerformance = () => {
         // Track Largest Contentful Paint (LCP)
         const lcpObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          const lastEntry = entries[entries.length - 1] as any;
+          const lastEntry = entries[entries.length - 1] as PerformanceEntry & { startTime: number };
           if (lastEntry) {
             const value = lastEntry.startTime;
             const rating = value <= 2500 ? 'good' : value <= 4000 ? 'needs-improvement' : 'poor';
@@ -24,15 +24,16 @@ export const useSentryPerformance = () => {
         
         try {
           lcpObserver.observe({ entryTypes: ['largest-contentful-paint'] });
-        } catch (e) {
+        } catch {
           // LCP not supported
         }
 
         // Track First Input Delay (FID)
         const fidObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          entries.forEach((entry: any) => {
-            const value = entry.processingStart - entry.startTime;
+          entries.forEach((entry) => {
+            const typedEntry = entry as PerformanceEntry & { processingStart: number; startTime: number };
+            const value = typedEntry.processingStart - typedEntry.startTime;
             const rating = value <= 100 ? 'good' : value <= 300 ? 'needs-improvement' : 'poor';
             trackWebVital('fid', value, rating);
           });
@@ -40,7 +41,7 @@ export const useSentryPerformance = () => {
 
         try {
           fidObserver.observe({ entryTypes: ['first-input'] });
-        } catch (e) {
+        } catch {
           // FID not supported
         }
 
@@ -48,16 +49,17 @@ export const useSentryPerformance = () => {
         let clsValue = 0;
         const clsObserver = new PerformanceObserver((list) => {
           const entries = list.getEntries();
-          entries.forEach((entry: any) => {
-            if (!entry.hadRecentInput) {
-              clsValue += entry.value;
+          entries.forEach((entry) => {
+            const typedEntry = entry as PerformanceEntry & { hadRecentInput: boolean; value: number };
+            if (!typedEntry.hadRecentInput) {
+              clsValue += typedEntry.value;
             }
           });
         });
 
         try {
           clsObserver.observe({ entryTypes: ['layout-shift'] });
-        } catch (e) {
+        } catch {
           // CLS not supported
         }
 

@@ -13,11 +13,11 @@ const mockWorker = {
 }
 
   // Mock Worker constructor
-  ; (globalThis as any).Worker = vi.fn().mockImplementation(() => mockWorker)
+  ; (globalThis as unknown as { Worker?: unknown }).Worker = vi.fn().mockImplementation(() => mockWorker)
 
   // Mock URL constructor and createObjectURL for worker creation
-  ; (globalThis as any).URL = class MockURL {
-    constructor(url: string, _base?: string) {
+  ; (globalThis as unknown as { URL?: unknown }).URL = class MockURL {
+    constructor(url: string) {
       return { href: url, toString: () => url }
     }
     static createObjectURL = vi.fn().mockReturnValue('mock-worker-url')
@@ -74,7 +74,7 @@ describe('useBPMDetection', () => {
     expect(result.current.isDetecting).toBe(true)
     expect(result.current.progress).toBe(0)
     expect(result.current.error).toBe(null)
-    expect((globalThis as any).Worker).toHaveBeenCalledWith(
+    expect((globalThis as unknown as { Worker?: unknown }).Worker).toHaveBeenCalledWith(
       expect.objectContaining({
         href: expect.stringContaining('bpmWorker.ts')
       }),
@@ -101,7 +101,7 @@ describe('useBPMDetection', () => {
       detectedBeats: 10
     }
 
-    let detectPromise: Promise<any>
+    let detectPromise: Promise<unknown>
 
     act(() => {
       detectPromise = result.current.detectBPM(audioBuffer)
@@ -133,7 +133,7 @@ describe('useBPMDetection', () => {
     const audioBuffer = createTestAudioBuffer()
 
     const errorMessage = 'BPM detection failed'
-    let detectPromise: Promise<any>
+    let detectPromise: Promise<unknown>
     let detectionError: unknown = null
 
     act(() => {
@@ -169,7 +169,7 @@ describe('useBPMDetection', () => {
     const { result } = renderHook(() => useBPMDetection())
     const audioBuffer = createTestAudioBuffer()
 
-    let detectPromise: Promise<any>
+    let detectPromise: Promise<unknown>
     let detectionError: unknown = null
 
     act(() => {
@@ -200,7 +200,7 @@ describe('useBPMDetection', () => {
     const { result } = renderHook(() => useBPMDetection())
     const audioBuffer = createTestAudioBuffer()
 
-    let detectPromise: Promise<any>
+    let detectPromise: Promise<unknown>
     let detectionError: unknown = null
 
     act(() => {

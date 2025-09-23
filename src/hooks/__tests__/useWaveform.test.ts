@@ -17,7 +17,7 @@ const createMockAudioBuffer = (duration: number = 10, sampleRate: number = 44100
         sampleRate,
         numberOfChannels: 1,
         length: samples,
-        getChannelData: (_channel: number) => channelData,
+        getChannelData: () => channelData,
         copyFromChannel: vi.fn(),
         copyToChannel: vi.fn()
     } as unknown as AudioBuffer
@@ -56,7 +56,7 @@ const createMockCanvas = () => {
         set shadowOffsetY(_value: number) { }
     }
 
-    vi.spyOn(canvas, 'getContext').mockReturnValue(mockContext as any)
+    vi.spyOn(canvas, 'getContext').mockReturnValue(mockContext as unknown as CanvasRenderingContext2D)
 
     return { canvas, mockContext }
 }

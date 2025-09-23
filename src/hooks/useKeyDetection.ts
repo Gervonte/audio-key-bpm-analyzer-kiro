@@ -57,7 +57,7 @@ export const useKeyDetection = (): UseKeyDetectionReturn => {
         }
 
         // Handle worker errors
-        const handleError = (_error: ErrorEvent) => {
+        const handleError = () => {
           clearInterval(progressInterval)
           setIsDetecting(false)
           setError('Worker error occurred')
@@ -111,7 +111,7 @@ export const useKeyDetection = (): UseKeyDetectionReturn => {
         reject(err)
       }
     })
-  }, [isDetecting])
+  }, [])
 
   // Cleanup worker on unmount
   const cleanup = useCallback(() => {

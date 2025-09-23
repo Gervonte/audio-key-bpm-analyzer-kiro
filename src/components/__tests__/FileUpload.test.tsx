@@ -52,7 +52,7 @@ describe('FileUpload Component', () => {
 
   it('should handle file selection via input', async () => {
     const { validateAudioFile } = await import('../../utils/validation')
-    const mockValidateAudioFile = validateAudioFile as any
+    const mockValidateAudioFile = validateAudioFile as unknown as { mockReturnValue: (value: unknown) => void }
     mockValidateAudioFile.mockReturnValue({ isValid: true })
 
     renderWithChakra(
@@ -71,7 +71,7 @@ describe('FileUpload Component', () => {
 
   it('should show error for invalid files', async () => {
     const { validateAudioFile } = await import('../../utils/validation')
-    const mockValidateAudioFile = validateAudioFile as any
+    const mockValidateAudioFile = validateAudioFile as unknown as { mockReturnValue: (value: unknown) => void }
     mockValidateAudioFile.mockReturnValue({
       isValid: false,
       error: 'Unsupported file format'
@@ -106,7 +106,7 @@ describe('FileUpload Component', () => {
 
   it('should handle drag and drop events', async () => {
     const { validateAudioFile } = await import('../../utils/validation')
-    const mockValidateAudioFile = validateAudioFile as any
+    const mockValidateAudioFile = validateAudioFile as unknown as { mockReturnValue: (value: unknown) => void }
     mockValidateAudioFile.mockReturnValue({ isValid: true })
 
     renderWithChakra(
@@ -218,7 +218,7 @@ describe('FileUpload Component', () => {
 
   it('should reset input value after file selection', async () => {
     const { validateAudioFile } = await import('../../utils/validation')
-    const mockValidateAudioFile = validateAudioFile as any
+    const mockValidateAudioFile = validateAudioFile as unknown as { mockReturnValue: (value: unknown) => void }
     mockValidateAudioFile.mockReturnValue({ isValid: true })
 
     renderWithChakra(
