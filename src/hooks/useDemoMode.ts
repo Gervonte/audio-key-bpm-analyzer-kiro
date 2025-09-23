@@ -132,27 +132,21 @@ export function useDemoMode(options: UseDemoModeOptions = {}): UseDemoModeReturn
     loadingAbortControllerRef.current = abortController
 
     try {
-      console.log('selectSample: About to call loadSample')
       // Load the sample audio
       await audioLoaderRef.current.loadSample(sample, {
         useCache: cacheEnabled,
         timeout: 10000
       })
-      console.log('selectSample: loadSample completed successfully')
 
       // Check if operation was aborted
       if (abortController.signal.aborted) {
-        console.log('selectSample: Operation was aborted')
         return
       }
 
       setSelectedSample(sample)
       setError(null)
-      console.log('selectSample: Success - sample loaded')
     } catch (err) {
-      console.log('selectSample: Caught error:', err)
       if (abortController.signal.aborted) {
-        console.log('selectSample: Operation was cancelled - still throwing error')
         // Even if aborted, we should still throw the error so handleDemoSampleSelect can catch it
         const errorMessage = err instanceof Error ? err.message : 'Operation was cancelled'
         setError(errorMessage)
@@ -163,7 +157,6 @@ export function useDemoMode(options: UseDemoModeOptions = {}): UseDemoModeReturn
       const errorMessage = err instanceof Error ? err.message : 'Failed to load sample'
       setError(errorMessage)
       setSelectedSample(null)
-      console.log('selectSample: Throwing error:', errorMessage)
       throw err // Re-throw the error so handleDemoSampleSelect can catch it
     } finally {
       setIsLoading(false)
