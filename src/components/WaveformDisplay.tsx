@@ -6,6 +6,7 @@ import {
   Spinner
 } from '@chakra-ui/react'
 import { useWaveform } from '../hooks/useWaveform'
+import { categorizeError } from '../utils/errorHandling'
 import type { WaveformData } from '../types'
 
 interface WaveformDisplayProps {
@@ -228,15 +229,28 @@ export const WaveformDisplay: React.FC<WaveformDisplayProps> = ({
           touchAction="pan-x pan-y"
         >
           {/* Show different content based on state - but maintain same container structure */}
-          {error ? (
-            <VStack gap={2}>
-              <Text color="red.800" fontWeight="bold">
-                Waveform Error
-              </Text>
-              <Text color="red.700" fontSize="sm" textAlign="center">
-                {error}
-              </Text>
-            </VStack>
+          {error && !isLoading ? (
+            (() => {
+              const errorInfo = categorizeError(error)
+              // Only show waveform-specific errors, not file validation errors (handled by FileUpload)
+              if (errorInfo.type === 'file_validation' || errorInfo.type === 'browser_compatibility') {
+                return (
+                  <Text color="gray.500" fontSize="lg">
+                    Upload an audio file to see waveform
+                  </Text>
+                )
+              }
+              return (
+                <VStack gap={2}>
+                  <Text color="red.800" fontWeight="bold">
+                    Waveform Error
+                  </Text>
+                  <Text color="red.700" fontSize="sm" textAlign="center">
+                    {error}
+                  </Text>
+                </VStack>
+              )
+            })()
           ) : isLoading || isGenerating ? (
             <VStack gap={3}>
               <Spinner size="lg" color="red.500" />

@@ -106,14 +106,16 @@ export function useDemoMode(options: UseDemoModeOptions = {}): UseDemoModeReturn
    */
   const selectSample = useCallback(async (sampleId: string) => {
     if (!audioLoaderRef.current) {
-      setError('Audio loader not available')
-      return
+      const error = new Error('Audio loader not available')
+      setError(error.message)
+      throw error
     }
 
     const sample = getSampleById(sampleId)
     if (!sample) {
-      setError(`Sample not found: ${sampleId}`)
-      return
+      const error = new Error(`Sample not found: ${sampleId}`)
+      setError(error.message)
+      throw error
     }
 
     setIsLoading(true)
@@ -130,27 +132,39 @@ export function useDemoMode(options: UseDemoModeOptions = {}): UseDemoModeReturn
     loadingAbortControllerRef.current = abortController
 
     try {
+      console.log('selectSample: About to call loadSample')
       // Load the sample audio
       await audioLoaderRef.current.loadSample(sample, {
         useCache: cacheEnabled,
         timeout: 10000
       })
+      console.log('selectSample: loadSample completed successfully')
 
       // Check if operation was aborted
       if (abortController.signal.aborted) {
+        console.log('selectSample: Operation was aborted')
         return
       }
 
       setSelectedSample(sample)
       setError(null)
+      console.log('selectSample: Success - sample loaded')
     } catch (err) {
+      console.log('selectSample: Caught error:', err)
       if (abortController.signal.aborted) {
-        return // Operation was cancelled
+        console.log('selectSample: Operation was cancelled - still throwing error')
+        // Even if aborted, we should still throw the error so handleDemoSampleSelect can catch it
+        const errorMessage = err instanceof Error ? err.message : 'Operation was cancelled'
+        setError(errorMessage)
+        setSelectedSample(null)
+        throw err
       }
 
       const errorMessage = err instanceof Error ? err.message : 'Failed to load sample'
       setError(errorMessage)
       setSelectedSample(null)
+      console.log('selectSample: Throwing error:', errorMessage)
+      throw err // Re-throw the error so handleDemoSampleSelect can catch it
     } finally {
       setIsLoading(false)
       loadingAbortControllerRef.current = null

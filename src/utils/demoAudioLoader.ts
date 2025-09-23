@@ -88,7 +88,7 @@ export class DemoAudioLoader {
     const { 
       useCache = true, 
       timeout = 10000, 
-      retryAttempts = 3, 
+      retryAttempts = 1, 
       retryDelay = 1000 
     } = options
 

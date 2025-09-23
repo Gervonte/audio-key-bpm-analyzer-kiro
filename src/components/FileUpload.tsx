@@ -41,6 +41,8 @@ export const FileUpload: React.FC<FileUploadProps> = ({
     error: demoError,
     toggleDemoMode,
     selectSample,
+    retryLoading,
+    clearSelection,
   } = useDemoMode({
     autoPreload: false,
     preloadOnMount: false,
@@ -75,14 +77,20 @@ export const FileUpload: React.FC<FileUploadProps> = ({
 
   // Handle demo sample selection
   const handleDemoSampleSelect = useCallback(async (sampleId: string) => {
+    console.log('handleDemoSampleSelect called with:', sampleId)
     try {
       await selectSample(sampleId)
+      console.log('selectSample succeeded, calling onFileSelect')
+      // If we get here, selectSample succeeded
       const sample = availableSamples.find(s => s.id === sampleId)
       if (sample) {
         onFileSelect(sample) // Pass the sample directly
       }
     } catch (error) {
       console.error('Failed to select demo sample:', error)
+      console.log('NOT calling onFileSelect due to error')
+      // Don't call onFileSelect if demo sample loading failed
+      // The error is already displayed by the demoError in FileUpload
     }
   }, [selectSample, availableSamples, onFileSelect])
 
@@ -182,7 +190,11 @@ export const FileUpload: React.FC<FileUploadProps> = ({
       {demoError && (
         <ErrorDisplay
           error={demoError}
-          onDismiss={() => {}}
+          onRetry={retryLoading}
+          onDismiss={() => {
+            console.log('Demo error dismissed')
+            clearSelection()
+          }}
           context="Demo Mode"
         />
       )}
