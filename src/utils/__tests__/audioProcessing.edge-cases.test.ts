@@ -362,11 +362,11 @@ describe('Audio Processing Edge Cases', () => {
   describe('checkWebAudioSupport edge cases', () => {
     it('should handle partial Web Audio API support', () => {
       const originalAudioContext = window.AudioContext
-      const originalWebkitAudioContext = (window as any).webkitAudioContext
+      const originalWebkitAudioContext = (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext
       
       // Mock partial support
-      ;(window as any).AudioContext = undefined
-      ;(window as any).webkitAudioContext = function() {
+      ;(window as unknown as { AudioContext?: unknown }).AudioContext = undefined
+      ;(window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext = function() {
         throw new Error('AudioContext creation failed')
       }
 
@@ -375,7 +375,7 @@ describe('Audio Processing Edge Cases', () => {
       
       // Restore
       window.AudioContext = originalAudioContext
-      ;(window as any).webkitAudioContext = originalWebkitAudioContext
+      ;(window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext = originalWebkitAudioContext
     })
 
     it('should handle AudioContext constructor that throws', () => {
@@ -408,23 +408,23 @@ describe('Audio Processing Edge Cases', () => {
     })
 
     it('should prefer standard AudioContext over webkit', () => {
-      const mockStandardContext = { standard: true } as any
-      const mockWebkitContext = { webkit: true } as any
+      const mockStandardContext = { standard: true } as unknown
+      const mockWebkitContext = { webkit: true } as unknown
       
       const originalAudioContext = window.AudioContext
-      const originalWebkitAudioContext = (window as any).webkitAudioContext
+      const originalWebkitAudioContext = (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext
       
-      window.AudioContext = vi.fn(() => mockStandardContext) as any
-      ;(window as any).webkitAudioContext = vi.fn(() => mockWebkitContext)
+      window.AudioContext = vi.fn(() => mockStandardContext) as unknown as typeof AudioContext
+      ;(window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext = vi.fn(() => mockWebkitContext)
 
       const context = createAudioContext()
       expect(context).toBe(mockStandardContext)
       expect(window.AudioContext).toHaveBeenCalled()
-      expect((window as any).webkitAudioContext).not.toHaveBeenCalled()
+      expect((window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext).not.toHaveBeenCalled()
 
       // Restore
       window.AudioContext = originalAudioContext
-      ;(window as any).webkitAudioContext = originalWebkitAudioContext
+      ;(window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext = originalWebkitAudioContext
     })
   })
 })

@@ -213,7 +213,7 @@ export function checkBrowserCompatibility(): BrowserCompatibility {
   const suggestions: string[] = []
 
   // Check Web Audio API support
-  if (!window.AudioContext && !(window as any).webkitAudioContext) {
+  if (!window.AudioContext && !(window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext) {
     errors.push('Web Audio API is not supported')
     suggestions.push('Please use a modern browser like Chrome, Firefox, Safari, or Edge')
   }
@@ -238,7 +238,7 @@ export function checkBrowserCompatibility(): BrowserCompatibility {
   }
 
   // Check available memory (rough estimate)
-  if ('deviceMemory' in navigator && (navigator as any).deviceMemory && (navigator as any).deviceMemory < 2) {
+  if ('deviceMemory' in navigator && (navigator as unknown as { deviceMemory?: number }).deviceMemory && (navigator as unknown as { deviceMemory?: number }).deviceMemory! < 2) {
     warnings.push('Low device memory detected')
     suggestions.push('Large audio files may not process correctly on this device')
   }

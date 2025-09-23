@@ -200,7 +200,7 @@ describe('validateKeyResult', () => {
       keyName: 'C Major',
       keySignature: 'C',
       confidence: 0.9,
-      mode: 'invalid' as any
+      mode: 'invalid' as unknown as 'major' | 'minor'
     }
     const result = validateKeyResult(invalidKey)
 

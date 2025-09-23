@@ -65,10 +65,10 @@ describe('audioProcessing utilities', () => {
     it('should return unsupported when AudioContext is not available', () => {
       // Temporarily set AudioContext to undefined
       const originalAudioContext = window.AudioContext
-      const originalWebkitAudioContext = (window as any).webkitAudioContext
+      const originalWebkitAudioContext = (window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext
       
-      ;(window as any).AudioContext = undefined
-      ;(window as any).webkitAudioContext = undefined
+      ;(window as unknown as { AudioContext?: unknown }).AudioContext = undefined
+      ;(window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext = undefined
 
       const result = checkWebAudioSupport()
       expect(result.isSupported).toBe(false)
@@ -76,13 +76,13 @@ describe('audioProcessing utilities', () => {
 
       // Restore
       window.AudioContext = originalAudioContext
-      ;(window as any).webkitAudioContext = originalWebkitAudioContext
+      ;(window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext = originalWebkitAudioContext
     })
 
     it('should work with webkit prefix', () => {
       const originalAudioContext = window.AudioContext
-      ;(window as any).AudioContext = undefined
-      ;(window as any).webkitAudioContext = vi.fn(() => mockAudioContext)
+      ;(window as unknown as { AudioContext?: unknown }).AudioContext = undefined
+      ;(window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext = vi.fn(() => mockAudioContext)
 
       const result = checkWebAudioSupport()
       expect(result.isSupported).toBe(true)
@@ -101,8 +101,8 @@ describe('audioProcessing utilities', () => {
 
     it('should use webkit prefix when available', () => {
       const originalAudioContext = window.AudioContext
-      ;(window as any).AudioContext = undefined
-      ;(window as any).webkitAudioContext = vi.fn(() => mockAudioContext)
+      ;(window as unknown as { AudioContext?: unknown }).AudioContext = undefined
+      ;(window as unknown as { webkitAudioContext?: unknown }).webkitAudioContext = vi.fn(() => mockAudioContext)
 
       const context = createAudioContext()
       expect(context).toBe(mockAudioContext)
@@ -117,14 +117,14 @@ describe('audioProcessing utilities', () => {
       mockAudioContext.close.mockResolvedValue(undefined)
       mockAudioContext.state = 'running'
 
-      await closeAudioContext(mockAudioContext as any)
+      await closeAudioContext(mockAudioContext as unknown as AudioContext)
       expect(mockAudioContext.close).toHaveBeenCalled()
     })
 
     it('should not close already closed context', async () => {
       mockAudioContext.state = 'closed'
 
-      await closeAudioContext(mockAudioContext as any)
+      await closeAudioContext(mockAudioContext as unknown as AudioContext)
       expect(mockAudioContext.close).not.toHaveBeenCalled()
     })
 
@@ -133,7 +133,7 @@ describe('audioProcessing utilities', () => {
       mockAudioContext.state = 'running'
 
       // Should not throw
-      await expect(closeAudioContext(mockAudioContext as any)).resolves.toBeUndefined()
+      await expect(closeAudioContext(mockAudioContext as unknown as AudioContext)).resolves.toBeUndefined()
     })
   })
 
@@ -156,7 +156,7 @@ describe('audioProcessing utilities', () => {
     })
 
     it('should reject null buffer', () => {
-      const result = validateAudioBuffer(null as any)
+      const result = validateAudioBuffer(null as unknown as AudioBuffer)
       expect(result.isValid).toBe(false)
       expect(result.error).toBe('AudioBuffer is null or undefined')
     })

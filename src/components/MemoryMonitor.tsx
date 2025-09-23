@@ -25,11 +25,11 @@ export const MemoryMonitor: React.FC<MemoryMonitorProps> = ({
     const [memoryStats, setMemoryStats] = useState(() => memoryManager.getMemoryStats())
     const { open: isOpen, onToggle } = useDisclosure({ defaultOpen: showDetails })
 
-    const updateStats = useCallback((stats: any) => {
+    const updateStats = useCallback((stats: unknown) => {
         setMemoryStats(prevStats => {
             // Only update if stats actually changed to prevent infinite loops
             if (JSON.stringify(prevStats) !== JSON.stringify(stats)) {
-                return stats
+                return stats as typeof prevStats
             }
             return prevStats
         })

@@ -52,7 +52,7 @@ export class DemoAudioLoader {
   private initializeAudioContext(): void {
     try {
       // Create audio context with proper error handling
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      this.audioContext = new (window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext!)()
       
       // Handle suspended context (user interaction required)
       if (this.audioContext.state === 'suspended') {
@@ -291,7 +291,7 @@ export class DemoAudioLoader {
               currentFile: sample.name
             })
           }
-        } catch (error) {
+        } catch {
           // Failed to preload sample
           loaded++
           

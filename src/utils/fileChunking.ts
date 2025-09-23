@@ -5,7 +5,7 @@ import { memoryManager } from './memoryManager'
 interface ChunkingOptions {
   maxChunkSize?: number
   onProgress?: (progress: number) => void
-  onChunkProcessed?: (chunkIndex: number, result: any) => void
+  onChunkProcessed?: (chunkIndex: number, result: unknown) => void
 }
 
 interface FileChunk {

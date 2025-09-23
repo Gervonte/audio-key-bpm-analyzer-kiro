@@ -1,5 +1,6 @@
 // BPM detection module using essentia.js tempo estimation algorithms
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { BPMResult } from '../types'
 import { BPM_RANGE } from '../types'
 import { essentiaManager } from './essentiaManager'
@@ -33,7 +34,7 @@ export class BPMDetector {
 
       // Convert AudioBuffer to mono signal for essentia.js
       // Note: audioBuffer is already preprocessed (mono + 16kHz) by AudioProcessor
-      let monoSignal = essentia.audioBufferToMonoSignal(audioBuffer)
+      const monoSignal = essentia.audioBufferToMonoSignal(audioBuffer)
 
       // No additional preprocessing needed since AudioProcessor already handles it
       // monoSignal is already at 16kHz and mono as per web demo
@@ -72,7 +73,7 @@ export class BPMDetector {
   /**
    * Parse essentia.js beat tracking result into our BPMResult format
    */
-  private parseEssentiaBeatResult(beatResult: any, essentia: any, _isSimple: boolean = false): BPMResult {
+  private parseEssentiaBeatResult(beatResult: any, essentia: any): BPMResult {
     // BeatTrackerMultiFeature returns: { ticks: Float32Array, confidence: number }
     // BeatTrackerDegara returns: { ticks: Float32Array }
     const ticks = essentia.vectorToArray(beatResult.ticks || beatResult)
@@ -107,7 +108,7 @@ export class BPMDetector {
 
     // Method 1: Median interval (most robust)
     const medianInterval = intervals[Math.floor(intervals.length / 2)]
-    let bpm1 = medianInterval > 0 ? 60 / medianInterval : 120
+    const bpm1 = medianInterval > 0 ? 60 / medianInterval : 120
 
     // Method 2: Mode of intervals (most common interval)
     const intervalCounts = new Map<number, number>()
@@ -125,7 +126,7 @@ export class BPMDetector {
       }
     }
 
-    let bpm2 = mostCommonInterval > 0 ? 60 / mostCommonInterval : 120
+    const bpm2 = mostCommonInterval > 0 ? 60 / mostCommonInterval : 120
 
     // Choose the BPM that's more likely to be correct for hip-hop
     let finalBPM = bpm1

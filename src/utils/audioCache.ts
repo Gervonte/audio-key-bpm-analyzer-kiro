@@ -97,7 +97,7 @@ export class AudioCache {
         this.updateStats()
         return false
       }
-    } catch (error) {
+    } catch {
       // If we can't generate hash, assume file changed
       this.cache.delete(key)
       this.updateStats()
@@ -136,7 +136,7 @@ export class AudioCache {
         this.stats.misses++
         return null
       }
-    } catch (error) {
+    } catch {
       this.cache.delete(key)
       this.updateStats()
       this.stats.misses++
@@ -171,8 +171,8 @@ export class AudioCache {
 
       this.cache.set(key, entry)
       this.updateStats()
-    } catch (error) {
-      console.warn('Failed to cache analysis result:', error)
+    } catch {
+      console.warn('Failed to cache analysis result')
     }
   }
 

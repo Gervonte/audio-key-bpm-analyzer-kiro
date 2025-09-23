@@ -275,7 +275,7 @@ export async function loadLargeFile(
   
   if (file.size <= smallFileThreshold) {
     // Simulate progress for small files to provide smooth UX
-    let progressInterval: any = null
+    let progressInterval: NodeJS.Timeout | null = null
     let currentProgress = 0
     
     if (onProgress) {

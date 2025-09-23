@@ -38,7 +38,7 @@ export interface UseDemoModeReturn {
   
   // Cache management
   clearCache: () => void
-  getCacheStats: () => any
+  getCacheStats: () => { cachedSamples: number; preloadedSamples: number; currentlyLoading: number; cacheKeys: string[]; preloadedKeys: string[] } | null
   
   // Integration helpers
   createFileFromSample: (sample: DemoSample) => File
@@ -77,12 +77,27 @@ export function useDemoMode(options: UseDemoModeOptions = {}): UseDemoModeReturn
     }
   }, [])
 
+  /**
+   * Preload all samples
+   */
+  const preloadAllSamples = useCallback(async () => {
+    if (!audioLoaderRef.current) {
+      return
+    }
+
+    try {
+      await audioLoaderRef.current.preloadSamples(availableSamples)
+    } catch {
+      // Failed to preload some samples
+    }
+  }, [availableSamples])
+
   // Preload samples on mount if enabled
   useEffect(() => {
     if (preloadOnMount && audioLoaderRef.current) {
       preloadAllSamples()
     }
-  }, [preloadOnMount])
+  }, [preloadOnMount, preloadAllSamples])
 
   /**
    * Toggle demo mode on/off
@@ -216,27 +231,10 @@ export function useDemoMode(options: UseDemoModeOptions = {}): UseDemoModeReturn
 
     try {
       await audioLoaderRef.current.loadSample(sample, { useCache: true })
-    } catch (error) {
+    } catch {
       // Failed to preload sample
     }
   }, [])
-
-  /**
-   * Preload all samples
-   */
-  const preloadAllSamples = useCallback(async () => {
-    if (!audioLoaderRef.current) {
-      return
-    }
-
-    try {
-      await audioLoaderRef.current.preloadSamples(availableSamples, (progress) => {
-        // Preloading progress
-      })
-    } catch (error) {
-      // Failed to preload some samples
-    }
-  }, [availableSamples])
 
   /**
    * Clear cache

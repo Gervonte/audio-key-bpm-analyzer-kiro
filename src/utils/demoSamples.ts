@@ -42,70 +42,70 @@ export interface DemoCategory {
  */
 export const HIP_HOP_DEMO_SAMPLES: DemoSample[] = [
   {
-    id: 'classic-hip-hop-beat',
-    name: 'Classic Hip-Hop Beat',
-    description: 'A classic 90s-style hip-hop instrumental with heavy kick and snare patterns, perfect for freestyle and underground rap',
-    subgenre: 'classic',
-    expectedKey: 'C Minor',
-    expectedBPM: 90,
-    duration: 30,
-    fileSize: 1024 * 1024, // 1MB placeholder
-    filePath: '/demo-samples/classic-hip-hop-beat.mp3',
+    id: 'chance-the-rapper-back-to-the-go',
+    name: 'Chance The Rapper - Back To The Go [Instrumental]',
+    description: 'Complex instrumental track featuring Chance The Rapper\'s signature style with soulful samples and intricate production',
+    subgenre: 'modern',
+    expectedKey: 'D Minor',
+    expectedBPM: 95,
+    duration: 35,
+    fileSize: 4128967, // ~4.1MB actual file size
+    filePath: '/demo-samples/Chance The Rapper - Back To The Go [Instrumental] | Complex.mp3',
     hipHopCharacteristics: {
       tempoStyle: 'laid-back',
       keyType: 'minor',
-      productionEra: '90s',
-      typicalUse: 'freestyle'
-    }
-  },
-  {
-    id: 'trap-instrumental',
-    name: 'Trap Instrumental',
-    description: 'A modern trap instrumental with heavy 808s, hi-hats, and dark minor key progression',
-    subgenre: 'trap',
-    expectedKey: 'A Minor',
-    expectedBPM: 140,
-    duration: 25,
-    fileSize: 1024 * 1024, // 1MB placeholder
-    filePath: '/demo-samples/trap-instrumental.mp3',
-    hipHopCharacteristics: {
-      tempoStyle: 'uptempo',
-      keyType: 'minor',
       productionEra: '2010s',
-      typicalUse: 'commercial'
+      typicalUse: 'versatile'
     }
   },
   {
-    id: 'boom-bap-beat',
-    name: 'Boom Bap Beat',
-    description: 'A traditional boom bap instrumental with classic drum breaks and soulful samples',
-    subgenre: 'boom-bap',
-    expectedKey: 'F Minor',
-    expectedBPM: 85,
-    duration: 28,
-    fileSize: 1024 * 1024, // 1MB placeholder
-    filePath: '/demo-samples/boom-bap-beat.mp3',
-    hipHopCharacteristics: {
-      tempoStyle: 'moderate',
-      keyType: 'minor',
-      productionEra: '90s',
-      typicalUse: 'underground'
-    }
-  },
-  {
-    id: 'modern-hip-hop-track',
-    name: 'Modern Hip-Hop Track',
-    description: 'A contemporary hip-hop instrumental blending traditional elements with modern production techniques',
+    id: 'daffy-accurate',
+    name: 'Daffy [prod. Tumfy] | Accurate',
+    description: 'Accurate instrumental production showcasing modern hip-hop techniques with clean mixing and mastering',
     subgenre: 'modern',
-    expectedKey: 'G Minor',
-    expectedBPM: 120,
-    duration: 32,
-    fileSize: 1024 * 1024, // 1MB placeholder
-    filePath: '/demo-samples/modern-hip-hop-track.mp3',
+    expectedKey: 'E Minor',
+    expectedBPM: 110,
+    duration: 30,
+    fileSize: 2797537, // ~2.8MB actual file size
+    filePath: '/demo-samples/Daffy [prod. Tumfy] | Accurate.mp3',
     hipHopCharacteristics: {
       tempoStyle: 'moderate',
       keyType: 'minor',
       productionEra: '2020s',
+      typicalUse: 'commercial'
+    }
+  },
+  {
+    id: 'daffy-corrupted',
+    name: 'Daffy [prod. Tumfy] | Corrupted',
+    description: 'Corrupted version of the Daffy instrumental for testing error handling and audio processing edge cases',
+    subgenre: 'modern',
+    expectedKey: 'E Minor',
+    expectedBPM: 110,
+    duration: 30,
+    fileSize: 2797537, // ~2.8MB actual file size (same as accurate version)
+    filePath: '/demo-samples/Daffy [prod. Tumfy] | Corrupted.mp3',
+    hipHopCharacteristics: {
+      tempoStyle: 'moderate',
+      keyType: 'minor',
+      productionEra: '2020s',
+      typicalUse: 'testing'
+    }
+  },
+  {
+    id: 'kaytranada-glowed-up',
+    name: 'Kaytranada - GLOWED UP [Instrumental] | Accurate',
+    description: 'Accurate instrumental from Kaytranada\'s GLOWED UP featuring modern electronic hip-hop production with jazz influences',
+    subgenre: 'modern',
+    expectedKey: 'F Minor',
+    expectedBPM: 105,
+    duration: 40,
+    fileSize: 4324760, // ~4.3MB actual file size
+    filePath: '/demo-samples/Kaytranada - GLOWED UP [Instrumental] | Accurate.mp3',
+    hipHopCharacteristics: {
+      tempoStyle: 'moderate',
+      keyType: 'minor',
+      productionEra: '2010s',
       typicalUse: 'versatile'
     }
   }
@@ -116,40 +116,13 @@ export const HIP_HOP_DEMO_SAMPLES: DemoSample[] = [
  */
 export const DEMO_CATEGORIES: DemoCategory[] = [
   {
-    id: 'classic',
-    name: 'Classic Hip-Hop',
-    description: 'Traditional hip-hop beats from the golden era',
-    samples: HIP_HOP_DEMO_SAMPLES.filter(s => s.subgenre === 'classic'),
-    hipHopStyle: 'Golden Era',
-    era: '90s',
-    characteristics: ['heavy kick', 'snare patterns', 'laid-back tempo', 'underground feel']
-  },
-  {
-    id: 'trap',
-    name: 'Trap',
-    description: 'Modern trap instrumentals with heavy 808s',
-    samples: HIP_HOP_DEMO_SAMPLES.filter(s => s.subgenre === 'trap'),
-    hipHopStyle: 'Trap',
-    era: '2010s',
-    characteristics: ['808s', 'hi-hats', 'dark minor keys', 'uptempo']
-  },
-  {
-    id: 'boom-bap',
-    name: 'Boom Bap',
-    description: 'Traditional boom bap with classic drum breaks',
-    samples: HIP_HOP_DEMO_SAMPLES.filter(s => s.subgenre === 'boom-bap'),
-    hipHopStyle: 'Boom Bap',
-    era: '90s',
-    characteristics: ['drum breaks', 'soulful samples', 'moderate tempo', 'underground']
-  },
-  {
     id: 'modern',
     name: 'Modern Hip-Hop',
-    description: 'Contemporary hip-hop production',
+    description: 'Contemporary hip-hop production featuring real artist instrumentals',
     samples: HIP_HOP_DEMO_SAMPLES.filter(s => s.subgenre === 'modern'),
     hipHopStyle: 'Contemporary',
-    era: '2020s',
-    characteristics: ['blended styles', 'modern production', 'versatile', 'current trends']
+    era: '2010s-2020s',
+    characteristics: ['real artist tracks', 'modern production', 'versatile styles', 'current trends']
   }
 ]
 

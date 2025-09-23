@@ -102,11 +102,11 @@ export class MemoryManager {
    */
   forceGarbageCollection(): void {
     // Try to trigger garbage collection
-    if ('gc' in window && typeof (window as any).gc === 'function') {
+    if ('gc' in window && typeof (window as unknown as { gc?: () => void }).gc === 'function') {
       try {
-        (window as any).gc()
-      } catch (error) {
-        console.warn('Failed to trigger garbage collection:', error)
+        (window as unknown as { gc?: () => void }).gc?.()
+      } catch {
+        console.warn('Failed to trigger garbage collection')
       }
     }
 
@@ -114,7 +114,7 @@ export class MemoryManager {
     try {
       const largeArray = new Array(1000000).fill(0)
       largeArray.length = 0
-    } catch (error) {
+    } catch {
       // Ignore errors
     }
   }
@@ -145,7 +145,7 @@ export class MemoryManager {
     }
 
     try {
-      const memory = (performance as any).memory as MemoryInfo
+      const memory = (performance as unknown as { memory?: MemoryInfo }).memory as MemoryInfo
       const current: MemoryInfo = {
         usedJSHeapSize: memory.usedJSHeapSize,
         totalJSHeapSize: memory.totalJSHeapSize,
@@ -182,8 +182,8 @@ export class MemoryManager {
       this.listeners.forEach(listener => {
         try {
           listener(this.memoryStats)
-        } catch (error) {
-          console.warn('Memory stats listener error:', error)
+        } catch {
+          console.warn('Memory stats listener error')
         }
       })
 
@@ -192,8 +192,8 @@ export class MemoryManager {
         this.forceGarbageCollection()
       }
 
-    } catch (error) {
-      console.warn('Failed to update memory stats:', error)
+    } catch {
+      console.warn('Failed to update memory stats')
     }
   }
 

@@ -9,7 +9,7 @@ interface RetryOptions {
 }
 
 interface UseRetryResult<T> {
-  execute: (...args: any[]) => Promise<T>
+  execute: (...args: unknown[]) => Promise<T>
   retry: () => Promise<T>
   isRetrying: boolean
   attemptCount: number
@@ -19,7 +19,7 @@ interface UseRetryResult<T> {
 }
 
 export function useRetry<T>(
-  asyncFunction: (...args: any[]) => Promise<T>,
+  asyncFunction: (...args: unknown[]) => Promise<T>,
   options: RetryOptions = {}
 ): UseRetryResult<T> {
   const {
@@ -32,7 +32,7 @@ export function useRetry<T>(
   const [isRetrying, setIsRetrying] = useState(false)
   const [attemptCount, setAttemptCount] = useState(0)
   const [lastError, setLastError] = useState<Error | null>(null)
-  const [lastArgs, setLastArgs] = useState<any[]>([])
+  const [lastArgs, setLastArgs] = useState<unknown[]>([])
 
   const timeoutRef = useRef<number | null>(null)
 
@@ -49,7 +49,7 @@ export function useRetry<T>(
   }, [])
 
   const executeWithRetry = useCallback(async (
-    args: any[],
+    args: unknown[],
     currentAttempt: number = 0
   ): Promise<T> => {
     try {
@@ -100,7 +100,7 @@ export function useRetry<T>(
     }
   }, [asyncFunction, maxAttempts, baseDelay, backoffMultiplier, onRetryAttempt, lastError])
 
-  const execute = useCallback(async (...args: any[]): Promise<T> => {
+  const execute = useCallback(async (...args: unknown[]): Promise<T> => {
     setLastArgs(args)
     return executeWithRetry(args, 0)
   }, [executeWithRetry])
@@ -127,13 +127,13 @@ export function useRetry<T>(
 
 // Specialized retry hook for audio processing
 export function useAudioProcessingRetry<T>(
-  asyncFunction: (...args: any[]) => Promise<T>
+  asyncFunction: (...args: unknown[]) => Promise<T>
 ): UseRetryResult<T> {
   return useRetry(asyncFunction, {
     maxAttempts: 3,
     baseDelay: 1500,
     backoffMultiplier: 2,
-    onRetryAttempt: (attempt, error) => {
+    onRetryAttempt: () => {
       // Audio processing retry attempt
     }
   })
@@ -141,13 +141,13 @@ export function useAudioProcessingRetry<T>(
 
 // Specialized retry hook for file operations
 export function useFileOperationRetry<T>(
-  asyncFunction: (...args: any[]) => Promise<T>
+  asyncFunction: (...args: unknown[]) => Promise<T>
 ): UseRetryResult<T> {
   return useRetry(asyncFunction, {
     maxAttempts: 2,
     baseDelay: 1000,
     backoffMultiplier: 1.5,
-    onRetryAttempt: (attempt, error) => {
+    onRetryAttempt: () => {
       // File operation retry attempt
     }
   })

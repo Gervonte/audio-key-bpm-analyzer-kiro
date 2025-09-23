@@ -51,8 +51,8 @@ describe('useFileUpload - Progress Tracking', () => {
 
   it('should provide smooth progress updates during file loading', async () => {
     // Mock loadLargeFile to simulate progress updates
-    mockLoadLargeFile.mockImplementation(async (_file: File, options: any) => {
-      const { onProgress } = options
+    mockLoadLargeFile.mockImplementation(async (_file: File, options: unknown) => {
+      const { onProgress } = options as { onProgress?: (progress: number) => void }
       
       // Simulate smooth progress updates
       const progressSteps = [10, 25, 40, 60, 80, 95, 100]
@@ -95,8 +95,8 @@ describe('useFileUpload - Progress Tracking', () => {
 
   it('should handle progress updates for small files', async () => {
     // Mock loadLargeFile for small file (will use regular arrayBuffer)
-    mockLoadLargeFile.mockImplementation(async (_file: File, options: any) => {
-      const { onProgress } = options
+    mockLoadLargeFile.mockImplementation(async (_file: File, options: unknown) => {
+      const { onProgress } = options as { onProgress?: (progress: number) => void }
       
       // Simulate small file loading with progress
       setTimeout(() => onProgress?.(50), 100)
@@ -123,8 +123,8 @@ describe('useFileUpload - Progress Tracking', () => {
 
   it('should handle progress updates for large files', async () => {
     // Mock loadLargeFile for large file (will use progressive loading)
-    mockLoadLargeFile.mockImplementation(async (_file: File, options: any) => {
-      const { onProgress } = options
+    mockLoadLargeFile.mockImplementation(async (_file: File, options: unknown) => {
+      const { onProgress } = options as { onProgress?: (progress: number) => void }
       
       // Simulate progressive loading with frequent updates
       for (let i = 0; i <= 100; i += 5) {
@@ -152,8 +152,8 @@ describe('useFileUpload - Progress Tracking', () => {
   })
 
   it('should not have progress jumps or gaps', async () => {
-    mockLoadLargeFile.mockImplementation(async (_file: File, options: any) => {
-      const { onProgress } = options
+    mockLoadLargeFile.mockImplementation(async (_file: File, options: unknown) => {
+      const { onProgress } = options as { onProgress?: (progress: number) => void }
       
       // Simulate realistic progress updates
       const updates = [5, 15, 30, 45, 60, 75, 85, 95, 100]
@@ -191,8 +191,8 @@ describe('useFileUpload - Progress Tracking', () => {
   })
 
   it('should complete progress at 100%', async () => {
-    mockLoadLargeFile.mockImplementation(async (_file: File, options: any) => {
-      const { onProgress } = options
+    mockLoadLargeFile.mockImplementation(async (_file: File, options: unknown) => {
+      const { onProgress } = options as { onProgress?: (progress: number) => void }
       onProgress?.(100)
       return new ArrayBuffer(1024)
     })

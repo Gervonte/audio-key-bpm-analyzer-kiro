@@ -14,7 +14,7 @@ describe('useRetry', () => {
       const mockFn = vi.fn().mockResolvedValue('success')
       const { result } = renderHook(() => useRetry(mockFn))
 
-      let executionResult: any
+      let executionResult: unknown
 
       await act(async () => {
         executionResult = await result.current.execute('arg1', 'arg2')

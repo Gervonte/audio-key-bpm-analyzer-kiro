@@ -35,14 +35,9 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
   disabled = false,
   size = 'md'
 }) => {
-  const getSubgenreColor = (subgenre: string) => {
-    const colors = {
-      'classic': 'red',
-      'trap': 'purple',
-      'boom-bap': 'orange',
-      'modern': 'blue'
-    }
-    return colors[subgenre as keyof typeof colors] || 'gray'
+  const getSubgenreColor = () => {
+    // All subgenres use red shades to match design system
+    return 'red'
   }
 
   const getSizeProps = () => {
@@ -54,7 +49,7 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
           descriptionSize: 'xs',
           metadataSize: 'xs',
           buttonSize: 'sm' as const,
-          minHeight: '120px'
+          minHeight: '140px'
         }
       case 'lg':
         return {
@@ -63,7 +58,7 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
           descriptionSize: 'md',
           metadataSize: 'sm',
           buttonSize: 'lg' as const,
-          minHeight: '200px'
+          minHeight: '240px'
         }
       default: // md
         return {
@@ -72,7 +67,7 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
           descriptionSize: 'sm',
           metadataSize: 'xs',
           buttonSize: 'md' as const,
-          minHeight: '160px'
+          minHeight: '180px'
         }
     }
   }
@@ -143,66 +138,72 @@ export const HipHopSampleCard: React.FC<HipHopSampleCardProps> = ({
         </Box>
       )}
 
-      <VStack align="stretch" gap={3} h="full">
-        {/* Header with title and badge */}
-        <HStack justify="space-between" align="start">
-          <VStack align="start" gap={1} flex="1">
-            <Text 
-              fontWeight="bold" 
-              fontSize={sizeProps.titleSize} 
-              color="black"
-              lineHeight="short"
-            >
-              {sample.name}
-            </Text>
-            <Badge 
-              colorScheme={getSubgenreColor(sample.subgenre)} 
-              size="sm"
-              textTransform="uppercase"
-              fontWeight="bold"
-            >
-              {sample.subgenre.replace('-', ' ')}
-            </Badge>
+      <VStack align="stretch" gap={3} h="full" justify="space-between">
+        {/* Content section */}
+        <VStack align="stretch" gap={3} flex="1">
+          {/* Header with title and badge */}
+          <HStack justify="space-between" align="start">
+            <VStack align="start" gap={1} flex="1">
+              <Text 
+                fontWeight="bold" 
+                fontSize={sizeProps.titleSize} 
+                color="black"
+                lineHeight="1.3"
+                overflow="hidden"
+                textOverflow="ellipsis"
+                maxH="2.6em"
+              >
+                {sample.name}
+              </Text>
+              <Badge 
+                colorScheme={getSubgenreColor()} 
+                size="sm"
+                textTransform="uppercase"
+                fontWeight="bold"
+              >
+                {sample.subgenre.replace('-', ' ')}
+              </Badge>
+            </VStack>
+          </HStack>
+          
+          {/* Description */}
+          <Text
+            fontSize={sizeProps.descriptionSize} 
+            color="gray.600"
+            lineHeight="1.4"
+            overflow="hidden"
+            textOverflow="ellipsis"
+            maxH="5.6em"
+          >
+            {sample.description}
+          </Text>
+          
+          {/* Metadata */}
+          <VStack align="stretch" gap={1.5} fontSize={sizeProps.metadataSize} color="gray.500">
+            <HStack justify="space-between" wrap="wrap">
+              <Text fontWeight="medium" minW="fit-content">Expected:</Text>
+              <Text textAlign="right" flex="1">{sample.expectedKey}, {sample.expectedBPM} BPM</Text>
+            </HStack>
+            
+            <HStack justify="space-between" wrap="wrap">
+              <Text fontWeight="medium" minW="fit-content">Duration:</Text>
+              <Text textAlign="right" flex="1">{sample.duration}s</Text>
+            </HStack>
+            
+            <HStack justify="space-between" wrap="wrap">
+              <Text fontWeight="medium" minW="fit-content">Era:</Text>
+              <Text textAlign="right" flex="1">{sample.hipHopCharacteristics.productionEra}</Text>
+            </HStack>
+            
+            <HStack justify="space-between" wrap="wrap">
+              <Text fontWeight="medium" minW="fit-content">Style:</Text>
+              <Text textAlign="right" flex="1">{sample.hipHopCharacteristics.tempoStyle}</Text>
+            </HStack>
           </VStack>
-        </HStack>
-        
-        {/* Description */}
-        <Text
-          fontSize={sizeProps.descriptionSize} 
-          color="gray.600"
-          lineHeight="short"
-          overflow="hidden"
-          textOverflow="ellipsis"
-          maxH="4.5em"
-        >
-          {sample.description}
-        </Text>
-        
-        {/* Metadata */}
-        <VStack align="stretch" gap={2} fontSize={sizeProps.metadataSize} color="gray.500">
-          <HStack justify="space-between">
-            <Text fontWeight="medium">Expected:</Text>
-            <Text>{sample.expectedKey}, {sample.expectedBPM} BPM</Text>
-          </HStack>
-          
-          <HStack justify="space-between">
-            <Text fontWeight="medium">Duration:</Text>
-            <Text>{sample.duration}s</Text>
-          </HStack>
-          
-          <HStack justify="space-between">
-            <Text fontWeight="medium">Era:</Text>
-            <Text>{sample.hipHopCharacteristics.productionEra}</Text>
-          </HStack>
-          
-          <HStack justify="space-between">
-            <Text fontWeight="medium">Style:</Text>
-            <Text>{sample.hipHopCharacteristics.tempoStyle}</Text>
-          </HStack>
         </VStack>
         
         {/* Action button */}
-        <Box mt="auto">
+        <Box>
           <Button
             size={sizeProps.buttonSize}
             colorScheme="red"

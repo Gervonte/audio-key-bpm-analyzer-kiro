@@ -88,7 +88,7 @@ export const useFileUpload = (): UseFileUploadReturn => {
       // Create audio context with proper error handling
       try {
         audioContext = createAudioContext()
-      } catch (err) {
+      } catch {
         throw new Error('Failed to create audio context. Your browser may not support Web Audio API.')
       }
 

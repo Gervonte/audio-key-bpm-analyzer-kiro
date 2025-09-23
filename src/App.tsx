@@ -35,7 +35,7 @@ import { useFileUpload } from './hooks/useFileUpload'
 import { useAudioProcessor } from './hooks/useAudioProcessor'
 import { useAudioProcessingRetry } from './hooks/useRetry'
 import { getDebugConfig } from './utils/debugMode'
-import type { AppState, AnalysisResult, FileSelection, DemoSample } from './types'
+import type { AppState, AnalysisResult, FileSelection, DemoSample, AudioFile } from './types'
 
 // Processing stages for better state management
 type ProcessingStage = 'idle' | 'loading' | 'analyzing' | 'complete' | 'error'
@@ -83,7 +83,7 @@ function App() {
     retry: retryAudioProcessing,
     canRetry: canRetryProcessing,
     isRetrying: isRetryingProcessing
-  } = useAudioProcessingRetry(processAudio)
+  } = useAudioProcessingRetry(processAudio as (...args: unknown[]) => Promise<AnalysisResult>)
 
   // Memory cleanup function
   const cleanupAudioResources = useCallback(() => {
@@ -154,7 +154,7 @@ function App() {
 
     try {
       let buffer: AudioBuffer
-      let audioFile: any
+      let audioFile: AudioFile | null = null
 
       if (isDemoSample) {
         // Handle demo sample - load from demo audio loader
