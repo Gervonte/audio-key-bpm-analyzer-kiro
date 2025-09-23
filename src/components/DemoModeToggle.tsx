@@ -76,13 +76,21 @@ export const DemoModeToggle: React.FC<DemoModeToggleProps> = ({
     >
       <HStack justify="space-between" align="center" gap={3}>
         <VStack align="start" gap={1} flex="1">
+          <Text 
+            fontWeight="bold" 
+            color="black"
+            fontSize="sm"
+            lineHeight="short"
+          >
+            {isDemoMode ? '🎵 Try Hip-Hop Samples' : '📁 Upload Your Audio'}
+          </Text>
           <HStack align="center" gap={2}>
             <Text 
               fontWeight="medium" 
               color={isDemoMode ? 'red.800' : 'gray.800'}
               fontSize={sizeProps.fontSize}
             >
-              Demo Mode
+              {isDemoMode ? 'Sample Tracks Active' : 'Upload Mode'}
             </Text>
             {isDemoMode && (
               <Box
@@ -94,7 +102,7 @@ export const DemoModeToggle: React.FC<DemoModeToggleProps> = ({
                 fontSize="xs"
                 fontWeight="bold"
               >
-                ACTIVE
+                SAMPLES
               </Box>
             )}
           </HStack>
@@ -106,8 +114,8 @@ export const DemoModeToggle: React.FC<DemoModeToggleProps> = ({
               lineHeight="short"
             >
               {isDemoMode 
-                ? 'Try hip-hop instrumental samples' 
-                : 'Upload your own hip-hop instrumentals'
+                ? 'Test the analyzer with curated hip-hop beats' 
+                : 'Analyze your own audio files for key & BPM'
               }
             </Text>
           )}
